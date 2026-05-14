@@ -1,0 +1,29 @@
+# Node
+node_modules/
+*.log
+
+# Build output
+dist/
+build/
+.vite/
+coverage/
+
+# Env (NEVER commit secrets)
+.env
+.env.local
+.env.*.local
+server/.env
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+
+# VS Code — commit shared settings, ignore personal
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Misc
+.eslintcache
