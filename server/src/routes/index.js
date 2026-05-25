@@ -6,6 +6,10 @@ import attractionsRoutes from './attractions.routes.js';
 
 const router = Router();
 
+router.get('/health', (req, res) =>
+  res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() }),
+);
+
 router.use('/auth', authRoutes);
 router.use('/trips', tripRoutes);
 router.use('/weather', weatherRoutes);
