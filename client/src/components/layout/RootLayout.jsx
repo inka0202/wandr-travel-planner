@@ -1,4 +1,5 @@
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
+import Navbar from './Navbar';
 
 export default function RootLayout() {
   return (
@@ -9,27 +10,7 @@ export default function RootLayout() {
       >
         Skip to main content
       </a>
-      <header className="sticky top-0 z-40 border-b border-navy-100 bg-white shadow-soft">
-        <nav className="container flex h-16 items-center justify-between">
-          <Link to="/" className="font-serif text-xl font-bold text-navy-900 transition-colors hover:text-navy-700">
-            Wandr
-          </Link>
-          <div className="flex items-center gap-4">
-            <NavLink
-              to="/login"
-              className="text-sm font-medium text-navy-600 transition-colors hover:text-navy-900"
-            >
-              Log in
-            </NavLink>
-            <Link
-              to="/register"
-              className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-orange-700"
-            >
-              Sign up
-            </Link>
-          </div>
-        </nav>
-      </header>
+      <Navbar />
       <main id="main" className="flex-1">
         <Outlet />
       </main>
