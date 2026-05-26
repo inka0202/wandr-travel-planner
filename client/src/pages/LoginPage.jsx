@@ -24,6 +24,10 @@ export default function LoginPage() {
       const next = new URLSearchParams(location.search).get('next') || '/trips';
       navigate(next, { replace: true });
     } catch (err) {
+      if (!err.response) {
+        setSubmitError('Connection failed. Check your internet and try again.');
+        return;
+      }
       const code = err.response?.data?.error?.code;
       if (code === 'RATE_LIMITED') {
         setSubmitError('Too many attempts. Wait 15 minutes and try again.');

@@ -24,9 +24,20 @@ export default function RegisterPage() {
       const next = new URLSearchParams(location.search).get('next') || '/trips';
       navigate(next, { replace: true });
     } catch (err) {
+      if (!err.response) {
+        setSubmitError('Connection failed. Check your internet and try again.');
+        return;
+      }
       const code = err.response?.data?.error?.code;
       if (code === 'EMAIL_EXISTS') {
-        setSubmitError('That email is already registered. Try logging in instead.');
+        setSubmitError(
+          <>
+            That email is already registered.{' '}
+            <Link to="/login" className="font-medium underline">
+              Log in instead.
+            </Link>
+          </>,
+        );
       } else {
         setSubmitError(err.response?.data?.error?.message || 'Something went wrong. Try again.');
       }
