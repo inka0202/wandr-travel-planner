@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes.js';
-import tripRoutes from './trip.routes.js';
-import weatherRoutes from './weather.routes.js';
-import attractionsRoutes from './attractions.routes.js';
+// import tripRoutes from './trip.routes.js';           // Week 3
+// import weatherRoutes from './weather.routes.js';     // Week 3
+// import attractionsRoutes from './attractions.routes.js'; // Week 3
 
 const router = Router();
 
@@ -11,8 +11,8 @@ router.get('/health', (req, res) =>
 );
 
 router.use('/auth', authRoutes);
-router.use('/trips', tripRoutes);
-router.use('/weather', weatherRoutes);
-router.use('/attractions', attractionsRoutes);
+// router.use('/trips', tripRoutes);
+// router.use('/weather', weatherRoutes);
+// router.use('/attractions', attractionsRoutes);
 
 export default router;

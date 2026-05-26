@@ -10,7 +10,10 @@ const start = async () => {
 
   const shutdown = (signal) => {
     console.log(`\n${signal} received. Shutting down...`);
-    server.close(async () => { await disconnectDB(); process.exit(0); });
+    server.close(async () => {
+      await disconnectDB();
+      process.exit(0);
+    });
     setTimeout(() => process.exit(1), 10_000).unref();
   };
   process.on('SIGINT', () => shutdown('SIGINT'));
@@ -20,4 +23,7 @@ const start = async () => {
     shutdown('unhandledRejection');
   });
 };
-start().catch((err) => { console.error('Fatal startup error:', err); process.exit(1); });
+start().catch((err) => {
+  console.error('Fatal startup error:', err);
+  process.exit(1);
+});
