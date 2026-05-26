@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '@/api/axios';
+import { TOKEN_KEY } from '@/lib/constants';
 
 export default function HomePage() {
   const [health, setHealth] = useState(null);
@@ -29,6 +30,13 @@ export default function HomePage() {
         className="mt-4 rounded-lg border border-navy-200 bg-white px-4 py-2 text-sm text-navy-600 shadow-soft transition-colors hover:bg-navy-50"
       >
         Check API health
+      </button>
+      {/* Temporary debug button — remove after Day 3 verification */}
+      <button
+        onClick={() => console.log('wandr_token:', localStorage.getItem(TOKEN_KEY))}
+        className="mt-2 rounded-lg border border-navy-200 bg-white px-4 py-2 text-sm text-navy-600 shadow-soft transition-colors hover:bg-navy-50"
+      >
+        Debug: log token
       </button>
       {health && (
         <p className={`mt-2 text-sm ${health.ok ? 'text-green-600' : 'text-red-600'}`}>
