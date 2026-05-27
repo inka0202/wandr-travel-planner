@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
 
-// Day 4 stub — replaced with full implementation on Day 6
+// Day 4/5 stub — replaced with full implementation on Day 6
 export default function SearchResultsPage() {
   const [params] = useSearchParams();
 
