@@ -9,7 +9,7 @@ const GROUP_TO_ICON = {
   storm: CloudLightning,
 };
 
-export const wmoCodeToGroup = (code) => {
+const wmoCodeToGroup = (code) => {
   if (code === 0 || code === 1) return 'clear';
   if (code === 2) return 'partly-cloudy';
   if (code === 3 || code === 45 || code === 48) return 'cloudy';

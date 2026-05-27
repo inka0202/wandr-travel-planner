@@ -8,9 +8,10 @@ import { orangeMarker } from './orangeMarkerIcon';
  */
 function CenterUpdater({ center, zoom }) {
   const map = useMap();
+  const [lat, lng] = center;
   useEffect(() => {
-    map.setView(center, zoom, { animate: true, duration: 0.7 });
-  }, [map, center[0], center[1], zoom]);
+    map.setView([lat, lng], zoom, { animate: true, duration: 0.7 });
+  }, [map, lat, lng, zoom]);
   return null;
 }
 
