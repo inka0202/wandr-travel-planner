@@ -14,4 +14,5 @@ export const env = {
   JWT_SECRET: process.env.JWT_SECRET,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN ?? '7d',
   CLIENT_ORIGIN: process.env.CLIENT_ORIGIN,
+  OPENTRIPMAP_API_KEY: process.env.OPENTRIPMAP_API_KEY, // undefined until Day 2, validated lazily in openTripMapService.js
 };

@@ -1,7 +1,8 @@
 import { Router } from 'express';
+import { weather } from '../controllers/weather.controller.js';
+import { publicApiLimiter } from '../middleware/rateLimit.js';
 
 const router = Router();
-
-router.use((req, res) => res.status(501).json({ error: { message: 'Not implemented' } }));
-
+router.use(publicApiLimiter);
+router.get('/', weather);
 export default router;

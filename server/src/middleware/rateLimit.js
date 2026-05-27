@@ -20,3 +20,19 @@ export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
 });
+
+// For endpoints that proxy external paid APIs.
+// 30 requests per 15 minutes per IP — generous enough for real users,
+// low enough to cap accidental or malicious hammering.
+export const publicApiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: {
+    error: {
+      message: 'Too many requests. Try again in 15 minutes.',
+      code: 'RATE_LIMITED',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
