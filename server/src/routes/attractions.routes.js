@@ -1,7 +1,8 @@
 import { Router } from 'express';
+import { attractions } from '../controllers/attractions.controller.js';
+import { publicApiLimiter } from '../middleware/rateLimit.js';
 
 const router = Router();
-
-router.use((req, res) => res.status(501).json({ error: { message: 'Not implemented' } }));
-
+router.use(publicApiLimiter);
+router.get('/', attractions);
 export default router;
