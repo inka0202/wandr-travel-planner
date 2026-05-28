@@ -9,6 +9,7 @@ import { notFound } from './middleware/notFound.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
+app.set('trust proxy', 1); // Render sits behind a reverse proxy
 app.use(helmet());
 app.use(
   cors({
