@@ -30,7 +30,7 @@ export default function AttractionCard({ attraction, isFavorited, onToggleFavori
         </button>
       </div>
       <p className="text-sm text-navy-500 capitalize mb-2">{attraction.kind}</p>
-      <p className="text-xs text-navy-400 flex items-center gap-1">
+      <p className="text-xs text-navy-500 flex items-center gap-1">
         <MapPin size={12} /> {km} km away
       </p>
     </article>

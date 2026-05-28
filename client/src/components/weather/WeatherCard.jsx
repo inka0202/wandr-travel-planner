@@ -10,7 +10,7 @@ export default function WeatherCard({ data }) {
       <div className="flex items-start justify-between mb-4">
         <div>
           <p className="text-sm text-navy-500 mb-1">Right now</p>
-          <p className="text-xs text-navy-400">{timezone}</p>
+          <p className="text-xs text-navy-500">{timezone}</p>
         </div>
         <WeatherIcon code={current.weatherCode} size={48} className="text-orange-600" />
       </div>
@@ -21,10 +21,10 @@ export default function WeatherCard({ data }) {
       <p className="text-navy-700 mb-4">{current.weatherText}</p>
       <div className="flex gap-4 text-sm text-navy-600">
         <span className="flex items-center gap-1">
-          <Wind size={16} className="text-navy-400" /> {current.wind} km/h
+          <Wind size={16} className="text-navy-500" /> {current.wind} km/h
         </span>
         <span className="flex items-center gap-1">
-          <Droplets size={16} className="text-navy-400" /> {current.humidity}%
+          <Droplets size={16} className="text-navy-500" /> {current.humidity}%
         </span>
       </div>
     </div>
