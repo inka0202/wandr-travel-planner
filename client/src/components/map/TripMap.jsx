@@ -23,6 +23,8 @@ export default function TripMap({
   zoom = 13,
 }) {
   return (
+    // relative z-0 isolates Leaflet's internal z-indices so they can't escape above the Navbar
+    <div className="relative z-0 h-full w-full">
     <MapContainer
       center={center}
       zoom={zoom}
@@ -53,5 +55,6 @@ export default function TripMap({
         </Marker>
       ))}
     </MapContainer>
+    </div>
   );
 }
