@@ -10,9 +10,8 @@ coverage/
 
 # Env (NEVER commit secrets)
 .env
-.env.local
-.env.*.local
-server/.env
+.env.*
+!.env.example
 
 # Editor / OS
 .DS_Store
