@@ -6,7 +6,7 @@ import morgan from 'morgan';
 import { env } from './config/env.js';
 import routes from './routes/index.js';
 import { notFound } from './middleware/notFound.js';
-import { errorHandler } from './middleware/errorHandler.js';
+import { createErrorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 app.set('trust proxy', 1); // Render sits behind a reverse proxy
@@ -28,6 +28,6 @@ app.get('/health', (req, res) => {
 
 app.use('/api', routes);
 app.use(notFound);
-app.use(errorHandler); // MUST be last
+app.use(createErrorHandler({ isDevelopment: env.IS_DEVELOPMENT })); // MUST be last
 
 export default app;

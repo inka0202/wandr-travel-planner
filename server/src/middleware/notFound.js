@@ -1,5 +1,6 @@
 import { ApiError } from '../utils/ApiError.js';
 
 export const notFound = (req, res, next) => {
-  next(new ApiError(404, `Not found: ${req.originalUrl}`, 'NOT_FOUND'));
+  // Don't echo req.originalUrl: it is user input
+  next(new ApiError(404, 'Not found', 'NOT_FOUND'));
 };
