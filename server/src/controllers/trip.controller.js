@@ -2,9 +2,38 @@ import Trip from '../models/Trip.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 
+/**
+ * Copy only the fields createTripValidator checks. Never spread req.body into a
+ * model: it would let clients set _id, user, timestamps or unvalidated subfields.
+ * (Not matchedData(): validating the parent `savedAttractions` array makes it
+ * return the raw array with every unvalidated subfield.)
+ */
+export const pickCreateTripFields = (body) => {
+  const { destination = {}, startDate, endDate, notes, savedAttractions = [] } = body;
+  return {
+    destination: {
+      name: destination.name,
+      country: destination.country,
+      latitude: destination.latitude,
+      longitude: destination.longitude,
+    },
+    startDate,
+    endDate,
+    notes,
+    savedAttractions: savedAttractions.map(({ xid, name, latitude, longitude, kind, address }) => ({
+      xid,
+      name,
+      latitude,
+      longitude,
+      kind,
+      address,
+    })),
+  };
+};
+
 export const createTrip = asyncHandler(async (req, res) => {
   const trip = await Trip.create({
-    ...req.body,
+    ...pickCreateTripFields(req.body),
     user: req.user._id, // ALWAYS scope to authenticated user
   });
   res.status(201).json({ trip });

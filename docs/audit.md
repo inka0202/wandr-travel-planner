@@ -303,6 +303,9 @@ Code fixes:
   ui/index.js, apiLimiter, server wmoCodeToGroup. Keep one health route.
 - Move fmtRange and date helpers to client/src/lib/dates.js and fix the timezone bug there.
   This includes ForecastStrip's formatDay / formatDate and SearchBar's today() (which uses a UTC date).
+  While in SearchBar, also add `max` limits to the date inputs that match the server rules from
+  Group 1 (server/src/utils/tripDates.js): start at most 2 years ahead, trip at most 30 days
+  (inclusive). Today the user only learns about these limits from the error shown on "Save trip".
 - Add a router errorElement.
 - Fix the details comment in validate.js, keep one email regex, and move the shared next redirect and error handling from the Login and Register pages into one helper.
 

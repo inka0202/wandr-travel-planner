@@ -2,12 +2,13 @@ import mongoose from 'mongoose';
 
 const attractionSchema = new mongoose.Schema(
   {
-    xid: { type: String, required: true, trim: true },
-    name: { type: String, required: true, trim: true },
+    // Limits mirror trip.validators.js. Custom messages never include {VALUE}.
+    xid: { type: String, required: true, trim: true, maxlength: [64, 'xid too long'] },
+    name: { type: String, required: true, trim: true, maxlength: [200, 'name too long'] },
     latitude: { type: Number, required: true, min: -90, max: 90 },
     longitude: { type: Number, required: true, min: -180, max: 180 },
-    kind: { type: String, trim: true },
-    address: { type: String, trim: true },
+    kind: { type: String, trim: true, maxlength: [60, 'kind too long'] },
+    address: { type: String, trim: true, maxlength: [300, 'address too long'] },
   },
   { _id: true, timestamps: false },
 );
@@ -21,8 +22,8 @@ const tripSchema = new mongoose.Schema(
       index: true,
     },
     destination: {
-      name: { type: String, required: true, trim: true },
-      country: { type: String, trim: true },
+      name: { type: String, required: true, trim: true, maxlength: [100, 'name too long'] },
+      country: { type: String, trim: true, maxlength: [80, 'country too long'] },
       latitude: { type: Number, required: true, min: -90, max: 90 },
       longitude: { type: Number, required: true, min: -180, max: 180 },
     },
@@ -38,7 +39,14 @@ const tripSchema = new mongoose.Schema(
       },
     },
     notes: { type: String, trim: true, maxlength: [1000, 'notes cannot exceed 1000 characters'] },
-    savedAttractions: { type: [attractionSchema], default: [] },
+    savedAttractions: {
+      type: [attractionSchema],
+      default: [],
+      validate: {
+        validator: (v) => v.length <= 50, // same as MAX_ATTRACTIONS in trip.validators.js
+        message: 'Maximum 50 attractions per trip',
+      },
+    },
   },
   {
     timestamps: true,
