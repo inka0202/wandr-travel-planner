@@ -1,4 +1,5 @@
 import { ApiError } from '../utils/ApiError.js';
+import { fetchWithTimeout } from '../utils/fetchWithTimeout.js';
 import { env } from '../config/env.js';
 
 const BASE = 'https://api.opentripmap.com/0.1/en';
@@ -28,11 +29,10 @@ export const getAttractionsNearby = async ({
   url.searchParams.set('limit', String(limit));
   url.searchParams.set('apikey', env.OPENTRIPMAP_API_KEY);
 
-  const res = await fetch(url);
-  if (!res.ok) {
+  const { ok, data } = await fetchWithTimeout(url);
+  if (!ok || !Array.isArray(data)) {
     throw new ApiError(502, 'Attractions service unavailable', 'ATTRACTIONS_UPSTREAM');
   }
-  const data = await res.json();
 
   // Filter out entries without coords or names (OpenTripMap occasionally returns these)
   return data

@@ -7,6 +7,11 @@
  */
 const store = new Map();
 
+// Keys come from user input (geocode `q`), so cap the size. When full, evict
+// the oldest insertion (FIFO via Map insertion order). Stopgap until the
+// MongoDB-backed cache (audit §8 Group 4).
+export const MAX_ENTRIES = 1000;
+
 export const getCached = (key) => {
   const entry = store.get(key);
   if (!entry) return null;
@@ -18,6 +23,11 @@ export const getCached = (key) => {
 };
 
 export const setCached = (key, value, ttlSeconds) => {
+  // Re-inserting moves the key to the end, so it counts as newest.
+  store.delete(key);
+  if (store.size >= MAX_ENTRIES) {
+    store.delete(store.keys().next().value);
+  }
   store.set(key, { value, expiresAt: Date.now() + ttlSeconds * 1000 });
 };
 

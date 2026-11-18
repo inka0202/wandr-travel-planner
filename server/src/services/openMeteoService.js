@@ -1,4 +1,5 @@
 import { ApiError } from '../utils/ApiError.js';
+import { fetchWithTimeout } from '../utils/fetchWithTimeout.js';
 import { wmoCodeToText } from '../utils/weatherCodeMap.js';
 
 const GEOCODE_BASE = 'https://geocoding-api.open-meteo.com/v1/search';
@@ -15,15 +16,14 @@ export const geocodeCity = async (query, count = 5) => {
   url.searchParams.set('language', 'en');
   url.searchParams.set('format', 'json');
 
-  const res = await fetch(url);
-  if (!res.ok) {
+  const { ok, data } = await fetchWithTimeout(url);
+  if (!ok || !data) {
     throw new ApiError(502, 'Geocoding service unavailable', 'GEOCODE_UPSTREAM');
   }
-  const data = await res.json();
 
   // Open-Meteo returns { results: [...] } on hits, { results: undefined } on misses
   if (!data.results?.length) {
-    throw new ApiError(404, `No results for "${query}"`, 'GEOCODE_NO_RESULTS');
+    throw new ApiError(404, 'No results for this search', 'GEOCODE_NO_RESULTS');
   }
 
   return data.results.map((r) => ({
@@ -68,11 +68,10 @@ export const getForecast = async ({ latitude, longitude, timezone = 'auto' }) =>
     ].join(','),
   );
 
-  const res = await fetch(url);
-  if (!res.ok) {
+  const { ok, data } = await fetchWithTimeout(url);
+  if (!ok || !data) {
     throw new ApiError(502, 'Weather service unavailable', 'WEATHER_UPSTREAM');
   }
-  const data = await res.json();
 
   // Open-Meteo returns parallel arrays — flatten into objects
   const daily = data.daily.time.map((date, i) => ({

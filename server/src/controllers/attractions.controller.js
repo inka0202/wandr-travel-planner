@@ -1,15 +1,7 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { ApiError } from '../utils/ApiError.js';
 import { withCache } from '../utils/cache.js';
+import { parseCoord } from '../utils/parseCoord.js';
 import { getAttractionsNearby } from '../services/openTripMapService.js';
-
-const parseCoord = (val, label, min, max) => {
-  const num = Number(val);
-  if (Number.isNaN(num) || num < min || num > max) {
-    throw new ApiError(400, `Invalid ${label}: ${val}`, 'INVALID_COORD');
-  }
-  return num;
-};
 
 export const attractions = asyncHandler(async (req, res) => {
   const lat = parseCoord(req.query.lat, 'lat', -90, 90);
