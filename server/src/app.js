@@ -13,7 +13,7 @@ app.set('trust proxy', 1); // Render sits behind a reverse proxy
 app.use(helmet());
 app.use(
   cors({
-    origin: env.CLIENT_ORIGIN, // explicit, NEVER '*'
+    origin: env.CLIENT_ORIGINS, // exact-match list, NEVER '*' (rejected at startup)
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
