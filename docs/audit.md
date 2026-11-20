@@ -329,6 +329,13 @@ Check that the Actions tab is green.
 Out of scope: Playwright e2e (at the end of the project), husky / pre-commit hooks,
 Vercel deploy gating, coverage thresholds, the Vite major upgrade, the date-helper tests (Group 3).
 
+### Right after Group 2, before Group 3: branch fix/usefetch-stale
+
+- fix/usefetch-stale: ignore or abort stale responses when deps change, un-skip the test.
+  (Found by the Group 2 client tests: `useFetch` shares one `cancelRef` across effect runs, so a
+  slow response for the previous deps overwrites the current data. Test:
+  `client/test/useFetch.test.js`, marked `TODO(bug)`.)
+
 ### Group 3. Clean-up: third, branch chore/cleanup
 
 - Delete dead code: App.css, client README boilerplate, unused ui/Input, ui/Card, ui/Spinner,
