@@ -286,11 +286,11 @@ Code fixes:
 ### Group 2. Quality tools: second, branch setup/quality
 
 - Check what's already installed (ESLint, Prettier, Playwright); only add what's missing.
-- Server tests: Vitest + Supertest + mongodb-memory-server. Cover the auth flow,
+- Server tests: node:test + Supertest + mongodb-memory-server. Cover the auth flow,
   trip ownership (user A cannot read or delete B's trip), validators, the error handler,
   and the Group 1 fixes. External APIs mocked.
-- Client tests: Vitest + Testing Library for useFetch and the date helpers (including the
-  timezone fix from Group 3).
+- Client tests: node:test + jsdom + Testing Library for useFetch (date-helper tests come
+  with the timezone fix in Group 3).
 - GitHub Actions CI: npm ci → eslint → prettier --check → tests → vite build.
   Format everything once with prettier --write in a separate commit.
 - Gate deploys on CI: set Render auto-deploy to wait for CI checks to pass.
@@ -313,15 +313,16 @@ Code fixes:
      a 5xx in production mode returns the generic message; tokens signed with alg none or HS512 → 401;
      6 successful logins are not blocked; CORS allowed vs foreign origin;
      upstream timeout → 504 UPSTREAM_TIMEOUT; invalid tz → 400; a cache hit does not call fetch again.
-3. Client tests: switch from node:test to Vitest (a version that supports Vite 5) with jsdom
-   and Testing Library. Move the existing safeRedirect tests. Add a useFetch test.
-   This removes the "no @/ imports, no JSX in tested code" restriction.
+3. Client tests: node:test + jsdom + Testing Library (jsdom globals loaded with
+   `node --import`). Add a useFetch test. Vitest was dropped: every version that supports
+   Vite 5 brings critical dev-only tinypool advisories (fixed only in Vitest ≥ 4.1.12, which
+   needs Vite ≥ 6). The "no @/ imports, no JSX in tested code" restriction stays until then.
 4. GitHub Actions CI (.github/workflows/ci.yml): on push and pull_request; two jobs (server, client);
    Node from .nvmrc; npm ci with cache → eslint → prettier --check → tests → vite build (client).
    No secrets needed. Cache the mongodb-memory-server binary.
 5. Docs: update the Commands and testing lines in CLAUDE.md;
    write docs/decisions/0002-test-stack.md (node:test + supertest + mongodb-memory-server on the server,
-   Vitest on the client, and why).
+   node:test + jsdom + Testing Library on the client, and why).
 
 Manual (me): on Render, set auto-deploy to wait for CI checks to pass, if the option is offered.
 Check that the Actions tab is green.
@@ -372,6 +373,8 @@ Vercel deploy gating, coverage thresholds, the Vite major upgrade, the date-help
 - When touching those pages, or at the end: responsive and accessibility fixes (ForecastStrip,
   sticky header, buttons inside links, 44 px touch targets, map catching touch scroll).
 - With the PWA: code splitting / React.lazy.
+- With the Vite major upgrade: move client tests to Vitest ≥ 4.1.12 (lifts the no-`@/`/no-JSX
+  rule for tested code).
 - At the end: README. Say that VITE_API_BASE_URL must end with /api, and document the Render
   and Vercel settings (root directories, build/start commands, env vars, health check), or add
   a render.yaml.
