@@ -85,7 +85,10 @@ for (const [zone, januaryOffset] of Object.entries(ZONES)) {
     it(`checkEndDate: order and ${MAX_TRIP_DAYS}-day limit (inclusive)`, () => {
       process.env.TZ = zone;
       assert.equal(checkEndDate('2026-11-20', '2026-11-20'), null, 'same-day trip = 1 day');
-      assert.equal(checkEndDate('2026-11-20', '2026-11-19'), 'endDate must be on or after startDate');
+      assert.equal(
+        checkEndDate('2026-11-20', '2026-11-19'),
+        'endDate must be on or after startDate',
+      );
       assert.equal(checkEndDate('2026-11-01', '2026-11-30'), null, '30 days');
       assert.equal(checkEndDate('2026-11-01', '2026-12-01'), 'Trip can be at most 30 days long');
       // Across a DST change (US: Nov 1 2026, EU: Oct 25 2026) days are still whole
@@ -98,7 +101,10 @@ for (const [zone, januaryOffset] of Object.entries(ZONES)) {
 
     it('checkEndDate reports its own invalid date, defers an invalid start', () => {
       process.env.TZ = zone;
-      assert.equal(checkEndDate('2026-11-20', '2026-11-31'), 'endDate must be a valid date (YYYY-MM-DD)');
+      assert.equal(
+        checkEndDate('2026-11-20', '2026-11-31'),
+        'endDate must be a valid date (YYYY-MM-DD)',
+      );
       assert.equal(checkEndDate('nope', '2026-11-20'), null);
     });
   });

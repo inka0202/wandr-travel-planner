@@ -36,19 +36,14 @@ export default function SearchResultsPage() {
   const startDate = params.get('start');
   const endDate = params.get('end');
 
-  const hasValidParams =
-    name && !Number.isNaN(lat) && !Number.isNaN(lng) && startDate && endDate;
+  const hasValidParams = name && !Number.isNaN(lat) && !Number.isNaN(lng) && startDate && endDate;
 
-  const weatherState = useFetch(
-    () => getWeather({ lat, lng, tz }),
-    [lat, lng, tz],
-    { skip: !hasValidParams },
-  );
-  const attractionsState = useFetch(
-    () => getAttractions({ lat, lng }),
-    [lat, lng],
-    { skip: !hasValidParams },
-  );
+  const weatherState = useFetch(() => getWeather({ lat, lng, tz }), [lat, lng, tz], {
+    skip: !hasValidParams,
+  });
+  const attractionsState = useFetch(() => getAttractions({ lat, lng }), [lat, lng], {
+    skip: !hasValidParams,
+  });
 
   const [favoritedIds, setFavoritedIds] = useState(new Set());
   const toggleFavorite = (attraction) => {
@@ -100,7 +95,7 @@ export default function SearchResultsPage() {
   if (!hasValidParams) {
     return (
       <div className="container py-16">
-        <p className="text-navy-700 mb-4">Search parameters incomplete.</p>
+        <p className="mb-4 text-navy-700">Search parameters incomplete.</p>
         <Button variant="primary" onClick={() => navigate('/')}>
           Go home
         </Button>
@@ -111,12 +106,12 @@ export default function SearchResultsPage() {
   return (
     <>
       {/* Sticky header */}
-      <div className="sticky top-16 z-20 bg-cream/95 backdrop-blur border-b border-navy-100">
-        <div className="container py-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="sticky top-16 z-20 border-b border-navy-100 bg-cream/95 backdrop-blur">
+        <div className="container flex flex-wrap items-center justify-between gap-3 py-3">
           <div>
             <button
               onClick={() => navigate('/')}
-              className="flex items-center gap-1 text-sm text-navy-500 hover:text-navy-700 mb-1"
+              className="mb-1 flex items-center gap-1 text-sm text-navy-500 hover:text-navy-700"
             >
               <ArrowLeft size={14} /> New search
             </button>
@@ -130,7 +125,7 @@ export default function SearchResultsPage() {
             <Button variant="primary" onClick={handleSaveTrip} disabled={isSaving}>
               <Heart
                 size={16}
-                className="inline mr-1"
+                className="mr-1 inline"
                 fill={favoritedIds.size ? 'currentColor' : 'none'}
               />
               {isSaving
@@ -143,14 +138,12 @@ export default function SearchResultsPage() {
       </div>
 
       {/* Body */}
-      <div className="container py-8 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-6">
+      <div className="container grid grid-cols-1 gap-6 py-8 lg:grid-cols-[1fr_1.2fr]">
         {/* LEFT column — weather + attractions */}
-        <div className="space-y-6 order-2 lg:order-1">
-          {weatherState.error && (
-            <p className="text-red-700">Weather temporarily unavailable.</p>
-          )}
+        <div className="order-2 space-y-6 lg:order-1">
+          {weatherState.error && <p className="text-red-700">Weather temporarily unavailable.</p>}
           {weatherState.isLoading && (
-            <div className="bg-white rounded-2xl shadow-card p-6 animate-pulse h-40" />
+            <div className="h-40 animate-pulse rounded-2xl bg-white p-6 shadow-card" />
           )}
           {weatherState.data && (
             <>
@@ -160,7 +153,7 @@ export default function SearchResultsPage() {
           )}
 
           <div>
-            <h2 className="font-serif text-2xl text-navy-900 mb-3">Nearby attractions</h2>
+            <h2 className="mb-3 font-serif text-2xl text-navy-900">Nearby attractions</h2>
             <AttractionList
               attractions={attractionsState.data}
               favoritedIds={favoritedIds}
@@ -173,7 +166,7 @@ export default function SearchResultsPage() {
 
         {/* RIGHT column — sticky map */}
         <div className="order-1 lg:order-2">
-          <div className="lg:sticky lg:top-44 h-[40vh] lg:h-[calc(100vh-12rem)]">
+          <div className="h-[40vh] lg:sticky lg:top-44 lg:h-[calc(100vh-12rem)]">
             <TripMap
               center={[lat, lng]}
               attractions={attractionsState.data}

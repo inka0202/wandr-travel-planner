@@ -62,8 +62,8 @@ export default function SearchBar({ variant = 'hero' }) {
       noValidate
       className={
         isHero
-          ? 'bg-white rounded-2xl shadow-card p-4 sm:p-6 grid gap-3 sm:gap-4 sm:grid-cols-[2fr_1fr_1fr_auto]'
-          : 'bg-white rounded-lg shadow-soft p-3 grid gap-2 sm:gap-3 sm:grid-cols-[2fr_1fr_1fr_auto]'
+          ? 'grid gap-3 rounded-2xl bg-white p-4 shadow-card sm:grid-cols-[2fr_1fr_1fr_auto] sm:gap-4 sm:p-6'
+          : 'grid gap-2 rounded-lg bg-white p-3 shadow-soft sm:grid-cols-[2fr_1fr_1fr_auto] sm:gap-3'
       }
     >
       <FormField
@@ -99,14 +99,14 @@ export default function SearchBar({ variant = 'hero' }) {
             'Searching…'
           ) : (
             <>
-              <Search size={18} className="inline mr-1" /> Search
+              <Search size={18} className="mr-1 inline" /> Search
             </>
           )}
         </Button>
       </div>
 
       {submitError && (
-        <div role="alert" className="sm:col-span-4 text-sm text-red-700">
+        <div role="alert" className="text-sm text-red-700 sm:col-span-4">
           {submitError}
         </div>
       )}

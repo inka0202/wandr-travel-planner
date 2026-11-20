@@ -9,9 +9,7 @@ import Trip from '../src/models/Trip.js';
 // Dates relative to the real "today" (UTC), because the validator uses new Date()
 const isoDay = (offsetDays) => {
   const now = new Date();
-  return new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + offsetDays),
-  )
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + offsetDays))
     .toISOString()
     .slice(0, 10);
 };
@@ -55,9 +53,7 @@ describe('createTripValidator', () => {
   });
 
   it('requires xid and name on each attraction', async () => {
-    const errors = await validate(
-      validBody({ savedAttractions: [{ latitude: 1, longitude: 1 }] }),
-    );
+    const errors = await validate(validBody({ savedAttractions: [{ latitude: 1, longitude: 1 }] }));
     assert.ok(errors.includes('Attraction xid is required'), errors.join(' | '));
     assert.ok(errors.includes('Attraction name is required'), errors.join(' | '));
   });

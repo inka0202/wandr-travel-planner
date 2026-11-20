@@ -38,7 +38,9 @@ export const parseOrigins = (raw) => {
       !url.search &&
       !url.hash;
     if (!isBareOrigin) {
-      return { error: `CLIENT_ORIGIN entry must be a bare http(s) origin like https://example.com: ${entry}` };
+      return {
+        error: `CLIENT_ORIGIN entry must be a bare http(s) origin like https://example.com: ${entry}`,
+      };
     }
     if (!origins.includes(url.origin)) origins.push(url.origin);
   }

@@ -41,9 +41,7 @@ export const createTrip = asyncHandler(async (req, res) => {
 
 export const listTrips = asyncHandler(async (req, res) => {
   // Newest first, no need to populate user — it's always req.user
-  const trips = await Trip.find({ user: req.user._id })
-    .sort({ createdAt: -1 })
-    .lean(); // .lean() = plain objects, ~5x faster reads
+  const trips = await Trip.find({ user: req.user._id }).sort({ createdAt: -1 }).lean(); // .lean() = plain objects, ~5x faster reads
   res.json({ trips });
 });
 

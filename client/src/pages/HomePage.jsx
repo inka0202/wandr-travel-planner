@@ -5,8 +5,8 @@ export default function HomePage() {
     <>
       {/* Hero */}
       <section className="container py-16 sm:py-24">
-        <div className="max-w-3xl mx-auto text-center mb-10">
-          <h1 className="font-serif text-4xl sm:text-6xl text-navy-900 leading-tight mb-4">
+        <div className="mx-auto mb-10 max-w-3xl text-center">
+          <h1 className="mb-4 font-serif text-4xl leading-tight text-navy-900 sm:text-6xl">
             Plan your next escape.
           </h1>
           <p className="text-lg text-navy-600">
@@ -14,14 +14,14 @@ export default function HomePage() {
             take.
           </p>
         </div>
-        <div className="max-w-4xl mx-auto">
+        <div className="mx-auto max-w-4xl">
           <SearchBar variant="hero" />
         </div>
       </section>
 
       {/* Feature explainer */}
       <section className="container py-16">
-        <div className="grid sm:grid-cols-3 gap-8 text-center">
+        <div className="grid gap-8 text-center sm:grid-cols-3">
           <Feature
             title="Live weather"
             body="Current conditions and a 7-day forecast for any destination."
@@ -43,7 +43,7 @@ export default function HomePage() {
 function Feature({ title, body }) {
   return (
     <div>
-      <h3 className="font-serif text-xl text-navy-900 mb-2">{title}</h3>
+      <h3 className="mb-2 font-serif text-xl text-navy-900">{title}</h3>
       <p className="text-navy-600">{body}</p>
     </div>
   );

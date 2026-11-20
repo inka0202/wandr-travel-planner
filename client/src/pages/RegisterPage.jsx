@@ -22,7 +22,10 @@ export default function RegisterPage() {
     setSubmitError(null);
     try {
       await registerUser(data.email, data.password, data.displayName);
-      const next = safeNext(new URLSearchParams(location.search).get('next'), window.location.origin);
+      const next = safeNext(
+        new URLSearchParams(location.search).get('next'),
+        window.location.origin,
+      );
       navigate(next, { replace: true });
     } catch (err) {
       if (!err.response) {
@@ -89,7 +92,10 @@ export default function RegisterPage() {
           />
 
           {submitError && (
-            <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+            >
               {submitError}
             </div>
           )}

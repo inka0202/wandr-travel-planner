@@ -25,22 +25,22 @@ export default function TripCard({ trip, onDeleted }) {
   };
 
   return (
-    <article className="bg-white rounded-2xl shadow-card overflow-hidden flex flex-col">
+    <article className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-card">
       {/* Visual band — gradient placeholder */}
-      <div className="h-32 bg-gradient-to-br from-navy-700 to-navy-900 relative">
+      <div className="relative h-32 bg-gradient-to-br from-navy-700 to-navy-900">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,_rgba(230,126,34,0.4),_transparent_60%)]" />
-        <div className="relative h-full flex items-end p-4">
-          <h3 className="font-serif text-2xl text-cream leading-tight">{trip.destination.name}</h3>
+        <div className="relative flex h-full items-end p-4">
+          <h3 className="font-serif text-2xl leading-tight text-cream">{trip.destination.name}</h3>
         </div>
       </div>
 
-      <div className="p-4 flex-1 flex flex-col gap-2">
+      <div className="flex flex-1 flex-col gap-2 p-4">
         {trip.destination.country && (
-          <p className="text-xs text-navy-500 flex items-center gap-1">
+          <p className="flex items-center gap-1 text-xs text-navy-500">
             <MapPin size={12} /> {trip.destination.country}
           </p>
         )}
-        <p className="text-sm text-navy-700 flex items-center gap-1">
+        <p className="flex items-center gap-1 text-sm text-navy-700">
           <Calendar size={14} className="text-navy-400" />
           {fmtRange(trip.startDate, trip.endDate)}
         </p>
@@ -49,7 +49,7 @@ export default function TripCard({ trip, onDeleted }) {
           {trip.savedAttractions?.length === 1 ? '' : 's'}
         </p>
 
-        <div className="mt-auto pt-3 flex items-center justify-between gap-2">
+        <div className="mt-auto flex items-center justify-between gap-2 pt-3">
           <Link
             to={`/trips/${trip._id}`}
             className="text-sm font-medium text-orange-700 hover:text-orange-800"
@@ -60,7 +60,7 @@ export default function TripCard({ trip, onDeleted }) {
             <button
               onClick={() => setConfirming(true)}
               aria-label="Delete trip"
-              className="text-navy-300 hover:text-red-600 p-1"
+              className="p-1 text-navy-300 hover:text-red-600"
             >
               <Trash2 size={16} />
             </button>
@@ -69,13 +69,13 @@ export default function TripCard({ trip, onDeleted }) {
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="text-xs font-medium text-red-700 hover:text-red-800 px-2 py-1"
+                className="px-2 py-1 text-xs font-medium text-red-700 hover:text-red-800"
               >
                 {deleting ? '…' : 'Delete'}
               </button>
               <button
                 onClick={() => setConfirming(false)}
-                className="text-xs text-navy-500 hover:text-navy-700 px-2 py-1"
+                className="px-2 py-1 text-xs text-navy-500 hover:text-navy-700"
               >
                 Cancel
               </button>
