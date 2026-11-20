@@ -359,6 +359,9 @@ Vercel deploy gating, coverage thresholds, the Vite major upgrade, the date-help
   and delete errors, map markers re-created on every render, keeping favourites through the
   login redirect (draft trip on the device).
 - With account settings: replace the ProfilePage stub.
+- With password reset: login timing difference for unknown emails (use a dummy bcrypt compare),
+  and forgot-password must respond the same way and in the same time whether the email exists
+  or not (don't await the email send).
 - When touching those pages, or at the end: responsive and accessibility fixes (ForecastStrip,
   sticky header, buttons inside links, 44 px touch targets, map catching touch scroll).
 - With the PWA: code splitting / React.lazy.
