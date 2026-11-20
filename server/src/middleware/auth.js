@@ -3,6 +3,7 @@ import { env } from '../config/env.js';
 import { ApiError } from '../utils/ApiError.js';
 import User from '../models/User.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { JWT_ALGORITHM } from '../utils/generateToken.js';
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
   const header = req.headers.authorization;
@@ -13,7 +14,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
 
   // jwt.verify throws TokenExpiredError or JsonWebTokenError;
   // the global errorHandler from Week 1 already maps these to 401
-  const decoded = jwt.verify(token, env.JWT_SECRET);
+  const decoded = jwt.verify(token, env.JWT_SECRET, { algorithms: [JWT_ALGORITHM] });
 
   const user = await User.findById(decoded.sub);
   if (!user) {

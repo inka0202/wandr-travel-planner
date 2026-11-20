@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '@/contexts/AuthContext';
 import { FormField } from '@/components/ui/FormField';
 import { Button } from '@/components/ui/Button';
+import { safeNext } from '@/lib/safeRedirect';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -21,7 +22,7 @@ export default function LoginPage() {
     setSubmitError(null);
     try {
       await login(data.email, data.password);
-      const next = new URLSearchParams(location.search).get('next') || '/trips';
+      const next = safeNext(new URLSearchParams(location.search).get('next'), window.location.origin);
       navigate(next, { replace: true });
     } catch (err) {
       if (!err.response) {

@@ -18,12 +18,16 @@ export function AuthProvider({ children }) {
 
     let cancelled = false;
     api
-      .get('/auth/me')
+      .get('/auth/me', {
+        timeout: 60_000, // 60s — tolerates Render cold start (~30–60s)
+      })
       .then((r) => {
         if (!cancelled) setUser(r.data.user);
       })
-      .catch(() => {
-        localStorage.removeItem(TOKEN_KEY);
+      .catch((err) => {
+        // Only a 401 means the token is bad. Timeouts, network errors and 5xx
+        // (e.g. a cold start) keep it, so the user stays logged in after a reload.
+        if (err.response?.status === 401) localStorage.removeItem(TOKEN_KEY);
         if (!cancelled) setUser(null);
       })
       .finally(() => {

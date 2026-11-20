@@ -4,7 +4,11 @@ import { env } from './env.js';
 
 // Node's c-ares resolver fails SRV lookups via router DNS on Windows;
 // pointing at 8.8.8.8/1.1.1.1 fixes Atlas mongodb+srv:// connections.
-dns.setServers(['8.8.8.8', '1.1.1.1']);
+// Dev-only workaround: in production it would override Render's resolver
+// for the whole process.
+if (env.IS_DEVELOPMENT) {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+}
 
 mongoose.set('strictQuery', true);
 

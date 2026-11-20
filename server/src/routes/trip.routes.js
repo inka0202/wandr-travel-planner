@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { verifyJWT } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { tripLimiter } from '../middleware/rateLimit.js';
 import {
   createTrip,
   listTrips,
@@ -16,7 +17,8 @@ import {
 
 const router = Router();
 
-// All trip routes require authentication
+// Rate limit first (also counts bad tokens), then require authentication
+router.use(tripLimiter);
 router.use(verifyJWT);
 
 router.get('/', listTrips);
