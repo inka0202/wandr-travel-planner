@@ -81,7 +81,7 @@ Env: `VITE_API_BASE_URL` **must include the `/api` suffix** (e.g. `https://<serv
 it replaces the default `'/api'` base URL in [client/src/api/axios.js](../client/src/api/axios.js). The README only says "Render URL",
 which is easy to get wrong. The variable is baked in at build time, so changing it requires a redeploy.
 
-**Render (backend)**: Web Service, Root Directory `server`, build `npm install` (`npm ci` is better), start `npm start`,
+**Render (backend)**: Web Service, Root Directory `server`, build `npm install`, start `npm start`,
 health check `/health`. Required env: `MONGODB_URI`, `JWT_SECRET`, `CLIENT_ORIGIN` (the exact Vercel origin, no trailing slash;
 Vercel preview URLs will fail CORS because only one origin is allowed), `OPENTRIPMAP_API_KEY`, **`NODE_ENV=production`**
 (see §6), `JWT_EXPIRES_IN`. Atlas Network Access must allow Render's egress (usually 0.0.0.0/0 on the free plan).
@@ -257,12 +257,12 @@ Client-side but similar: favourited attractions on the search page are only Reac
 Manual checks (done by me, list them as a checklist): NODE_ENV=production on Render;
 email_1 and trips indexes exist in Atlas (if any is missing, create it once, e.g. with a one-off
 syncIndexes() script, and check for duplicate emails first); JWT_SECRET is long and random;
-Render build command is npm ci instead of npm install.
+Render build command stays npm install (decision: CI runs npm ci, which checks the lockfile)
 Code fixes:
 
 1. npm audit fix in both packages; patch updates for react-router-dom (≥7.18.5), axios, mongoose.
    Stay on the current major versions. Apply the other safe updates within the current majors: helmet, morgan, express-rate-limit, react-hook-form, lucide-react,
-   postcss, playwright, prettier, @fontsource-variable/*, autoprefixer, @tailwindcss/typography,
+   postcss, playwright, prettier, @fontsource-variable/\*, autoprefixer, @tailwindcss/typography,
    eslint-plugin-react-refresh, globals, @types/leaflet.
    Known remaining risk: the vite / esbuild advisories most likely need a major Vite upgrade, which
    is out of scope (Group 5). They affect the dev server and build only, not the deployed site.
@@ -293,9 +293,41 @@ Code fixes:
   timezone fix from Group 3).
 - GitHub Actions CI: npm ci → eslint → prettier --check → tests → vite build.
   Format everything once with prettier --write in a separate commit.
-- Gate deploys on CI: set Render auto-deploy to wait for CI checks to pass, and make Vercel
-  production deploys depend on the same checks.
-- Pre-commit hooks (husky + lint-staged: eslint and prettier on staged files).
+- Gate deploys on CI: set Render auto-deploy to wait for CI checks to pass.
+
+0. Docs fixes:
+   - CLAUDE.md "Ownership scoping": add "(owner-only until trip sharing; will be replaced
+     by one permission check)".
+   - docs/decisions/0001: "Revisit when" → after the project (after 6 Dec 2026), unless an
+     advisory appears in a runtime dependency. No Vite major upgrade during the project.
+1. Formatting-only commit: prettier --write in both packages. No other changes in this commit.
+   Run lint and the existing tests after it.
+2. Server integration tests: keep node:test, add supertest + mongodb-memory-server (devDependencies).
+   - A test helper: sets test env vars, starts the in-memory MongoDB, imports app.js
+     (no listen, no real database, no real keys).
+   - External APIs are always mocked (fetch stubbed), so tests never use our free quotas.
+   - Rate limiters must not make tests flaky, and must not be disabled in production code.
+   - Cover: register / login / duplicate email / wrong password / /auth/me;
+     trip ownership (user B gets 404 on GET, PATCH, DELETE of user A's trip);
+     createTrip ignores \_id, createdAt and extra fields; validation errors return 400;
+     a 5xx in production mode returns the generic message; tokens signed with alg none or HS512 → 401;
+     6 successful logins are not blocked; CORS allowed vs foreign origin;
+     upstream timeout → 504 UPSTREAM_TIMEOUT; invalid tz → 400; a cache hit does not call fetch again.
+3. Client tests: switch from node:test to Vitest (a version that supports Vite 5) with jsdom
+   and Testing Library. Move the existing safeRedirect tests. Add a useFetch test.
+   This removes the "no @/ imports, no JSX in tested code" restriction.
+4. GitHub Actions CI (.github/workflows/ci.yml): on push and pull_request; two jobs (server, client);
+   Node from .nvmrc; npm ci with cache → eslint → prettier --check → tests → vite build (client).
+   No secrets needed. Cache the mongodb-memory-server binary.
+5. Docs: update the Commands and testing lines in CLAUDE.md;
+   write docs/decisions/0002-test-stack.md (node:test + supertest + mongodb-memory-server on the server,
+   Vitest on the client, and why).
+
+Manual (me): on Render, set auto-deploy to wait for CI checks to pass, if the option is offered.
+Check that the Actions tab is green.
+
+Out of scope: Playwright e2e (at the end of the project), husky / pre-commit hooks,
+Vercel deploy gating, coverage thresholds, the Vite major upgrade, the date-helper tests (Group 3).
 
 ### Group 3. Clean-up: third, branch chore/cleanup
 
