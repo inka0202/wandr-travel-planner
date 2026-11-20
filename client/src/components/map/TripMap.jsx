@@ -25,36 +25,36 @@ export default function TripMap({
   return (
     // relative z-0 isolates Leaflet's internal z-indices so they can't escape above the Navbar
     <div className="relative z-0 h-full w-full">
-    <MapContainer
-      center={center}
-      zoom={zoom}
-      scrollWheelZoom
-      className="h-full w-full rounded-2xl"
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <CenterUpdater center={center} zoom={zoom} />
+      <MapContainer
+        center={center}
+        zoom={zoom}
+        scrollWheelZoom
+        className="h-full w-full rounded-2xl"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <CenterUpdater center={center} zoom={zoom} />
 
-      {attractions?.map((a) => (
-        <Marker
-          key={a.xid}
-          position={[a.latitude, a.longitude]}
-          icon={orangeMarker(favoritedIds.has(a.xid))}
-          eventHandlers={{
-            click: () => onMarkerClick?.(a),
-          }}
-        >
-          <Popup>
-            <div className="font-sans">
-              <p className="font-semibold text-navy-900">{a.name}</p>
-              <p className="text-xs text-navy-500 capitalize mt-0.5">{a.kind}</p>
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+        {attractions?.map((a) => (
+          <Marker
+            key={a.xid}
+            position={[a.latitude, a.longitude]}
+            icon={orangeMarker(favoritedIds.has(a.xid))}
+            eventHandlers={{
+              click: () => onMarkerClick?.(a),
+            }}
+          >
+            <Popup>
+              <div className="font-sans">
+                <p className="font-semibold text-navy-900">{a.name}</p>
+                <p className="mt-0.5 text-xs capitalize text-navy-500">{a.kind}</p>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
     </div>
   );
 }

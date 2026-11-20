@@ -81,7 +81,7 @@ Env: `VITE_API_BASE_URL` **must include the `/api` suffix** (e.g. `https://<serv
 it replaces the default `'/api'` base URL in [client/src/api/axios.js](../client/src/api/axios.js). The README only says "Render URL",
 which is easy to get wrong. The variable is baked in at build time, so changing it requires a redeploy.
 
-**Render (backend)**: Web Service, Root Directory `server`, build `npm install` (`npm ci` is better), start `npm start`,
+**Render (backend)**: Web Service, Root Directory `server`, build `npm install`, start `npm start`,
 health check `/health`. Required env: `MONGODB_URI`, `JWT_SECRET`, `CLIENT_ORIGIN` (the exact Vercel origin, no trailing slash;
 Vercel preview URLs will fail CORS because only one origin is allowed), `OPENTRIPMAP_API_KEY`, **`NODE_ENV=production`**
 (see §6), `JWT_EXPIRES_IN`. Atlas Network Access must allow Render's egress (usually 0.0.0.0/0 on the free plan).
@@ -257,12 +257,12 @@ Client-side but similar: favourited attractions on the search page are only Reac
 Manual checks (done by me, list them as a checklist): NODE_ENV=production on Render;
 email_1 and trips indexes exist in Atlas (if any is missing, create it once, e.g. with a one-off
 syncIndexes() script, and check for duplicate emails first); JWT_SECRET is long and random;
-Render build command is npm ci instead of npm install.
+Render build command stays npm install (decision: CI runs npm ci, which checks the lockfile)
 Code fixes:
 
 1. npm audit fix in both packages; patch updates for react-router-dom (≥7.18.5), axios, mongoose.
    Stay on the current major versions. Apply the other safe updates within the current majors: helmet, morgan, express-rate-limit, react-hook-form, lucide-react,
-   postcss, playwright, prettier, @fontsource-variable/*, autoprefixer, @tailwindcss/typography,
+   postcss, playwright, prettier, @fontsource-variable/\*, autoprefixer, @tailwindcss/typography,
    eslint-plugin-react-refresh, globals, @types/leaflet.
    Known remaining risk: the vite / esbuild advisories most likely need a major Vite upgrade, which
    is out of scope (Group 5). They affect the dev server and build only, not the deployed site.
@@ -286,16 +286,56 @@ Code fixes:
 ### Group 2. Quality tools: second, branch setup/quality
 
 - Check what's already installed (ESLint, Prettier, Playwright); only add what's missing.
-- Server tests: Vitest + Supertest + mongodb-memory-server. Cover the auth flow,
+- Server tests: node:test + Supertest + mongodb-memory-server. Cover the auth flow,
   trip ownership (user A cannot read or delete B's trip), validators, the error handler,
   and the Group 1 fixes. External APIs mocked.
-- Client tests: Vitest + Testing Library for useFetch and the date helpers (including the
-  timezone fix from Group 3).
+- Client tests: node:test + jsdom + Testing Library for useFetch (date-helper tests come
+  with the timezone fix in Group 3).
 - GitHub Actions CI: npm ci → eslint → prettier --check → tests → vite build.
   Format everything once with prettier --write in a separate commit.
-- Gate deploys on CI: set Render auto-deploy to wait for CI checks to pass, and make Vercel
-  production deploys depend on the same checks.
-- Pre-commit hooks (husky + lint-staged: eslint and prettier on staged files).
+- Gate deploys on CI: set Render auto-deploy to wait for CI checks to pass.
+
+0. Docs fixes:
+   - CLAUDE.md "Ownership scoping": add "(owner-only until trip sharing; will be replaced
+     by one permission check)".
+   - docs/decisions/0001: "Revisit when" → after the project (after 6 Dec 2026), unless an
+     advisory appears in a runtime dependency. No Vite major upgrade during the project.
+1. Formatting-only commit: prettier --write in both packages. No other changes in this commit.
+   Run lint and the existing tests after it.
+2. Server integration tests: keep node:test, add supertest + mongodb-memory-server (devDependencies).
+   - A test helper: sets test env vars, starts the in-memory MongoDB, imports app.js
+     (no listen, no real database, no real keys).
+   - External APIs are always mocked (fetch stubbed), so tests never use our free quotas.
+   - Rate limiters must not make tests flaky, and must not be disabled in production code.
+   - Cover: register / login / duplicate email / wrong password / /auth/me;
+     trip ownership (user B gets 404 on GET, PATCH, DELETE of user A's trip);
+     createTrip ignores \_id, createdAt and extra fields; validation errors return 400;
+     a 5xx in production mode returns the generic message; tokens signed with alg none or HS512 → 401;
+     6 successful logins are not blocked; CORS allowed vs foreign origin;
+     upstream timeout → 504 UPSTREAM_TIMEOUT; invalid tz → 400; a cache hit does not call fetch again.
+3. Client tests: node:test + jsdom + Testing Library (jsdom globals loaded with
+   `node --import`). Add a useFetch test. Vitest was dropped: every version that supports
+   Vite 5 brings critical dev-only tinypool advisories (fixed only in Vitest ≥ 4.1.12, which
+   needs Vite ≥ 6). The "no @/ imports, no JSX in tested code" restriction stays until then.
+4. GitHub Actions CI (.github/workflows/ci.yml): on push and pull_request; two jobs (server, client);
+   Node from .nvmrc; npm ci with cache → eslint → prettier --check → tests → vite build (client).
+   No secrets needed. Cache the mongodb-memory-server binary.
+5. Docs: update the Commands and testing lines in CLAUDE.md;
+   write docs/decisions/0002-test-stack.md (node:test + supertest + mongodb-memory-server on the server,
+   node:test + jsdom + Testing Library on the client, and why).
+
+Manual (me): on Render, set auto-deploy to wait for CI checks to pass, if the option is offered.
+Check that the Actions tab is green.
+
+Out of scope: Playwright e2e (at the end of the project), husky / pre-commit hooks,
+Vercel deploy gating, coverage thresholds, the Vite major upgrade, the date-helper tests (Group 3).
+
+### Right after Group 2, before Group 3: branch fix/usefetch-stale
+
+- fix/usefetch-stale: ignore or abort stale responses when deps change, un-skip the test.
+  (Found by the Group 2 client tests: `useFetch` shares one `cancelRef` across effect runs, so a
+  slow response for the previous deps overwrites the current data. Test:
+  `client/test/useFetch.test.js`, marked `TODO(bug)`.)
 
 ### Group 3. Clean-up: third, branch chore/cleanup
 
@@ -327,9 +367,14 @@ Code fixes:
   and delete errors, map markers re-created on every render, keeping favourites through the
   login redirect (draft trip on the device).
 - With account settings: replace the ProfilePage stub.
+- With password reset: login timing difference for unknown emails (use a dummy bcrypt compare),
+  and forgot-password must respond the same way and in the same time whether the email exists
+  or not (don't await the email send).
 - When touching those pages, or at the end: responsive and accessibility fixes (ForecastStrip,
   sticky header, buttons inside links, 44 px touch targets, map catching touch scroll).
 - With the PWA: code splitting / React.lazy.
+- With the Vite major upgrade: move client tests to Vitest ≥ 4.1.12 (lifts the no-`@/`/no-JSX
+  rule for tested code).
 - At the end: README. Say that VITE_API_BASE_URL must end with /api, and document the Render
   and Vercel settings (root directories, build/start commands, env vars, health check), or add
   a render.yaml.

@@ -9,7 +9,8 @@ import { fetchWithTimeout } from '../src/utils/fetchWithTimeout.js';
 const rejectsCoord = (val) =>
   assert.throws(
     () => parseCoord(val, 'lat', -90, 90),
-    (err) => err.statusCode === 400 && err.message === 'Invalid lat' && err.code === 'INVALID_COORD',
+    (err) =>
+      err.statusCode === 400 && err.message === 'Invalid lat' && err.code === 'INVALID_COORD',
     `should reject ${JSON.stringify(val)}`,
   );
 
@@ -104,11 +105,19 @@ describe('fetchWithTimeout', () => {
   });
 
   it('returns parsed JSON', async () => {
-    assert.deepEqual(await fetchWithTimeout(`${base}/json`), { ok: true, status: 200, data: { a: 1 } });
+    assert.deepEqual(await fetchWithTimeout(`${base}/json`), {
+      ok: true,
+      status: 200,
+      data: { a: 1 },
+    });
   });
 
   it('returns data: null for a non-JSON error body', async () => {
-    assert.deepEqual(await fetchWithTimeout(`${base}/html500`), { ok: false, status: 500, data: null });
+    assert.deepEqual(await fetchWithTimeout(`${base}/html500`), {
+      ok: false,
+      status: 500,
+      data: null,
+    });
   });
 
   it('maps a hanging response to 504 UPSTREAM_TIMEOUT', async () => {

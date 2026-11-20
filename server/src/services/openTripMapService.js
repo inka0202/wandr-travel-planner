@@ -9,12 +9,7 @@ const BASE = 'https://api.opentripmap.com/0.1/en';
  * Returns normalized list; we deliberately skip the per-XID details call
  * (which would multiply API usage by 30x) since list data has what we need.
  */
-export const getAttractionsNearby = async ({
-  latitude,
-  longitude,
-  radius = 5000,
-  limit = 30,
-}) => {
+export const getAttractionsNearby = async ({ latitude, longitude, radius = 5000, limit = 30 }) => {
   if (!env.OPENTRIPMAP_API_KEY) {
     throw new ApiError(500, 'OpenTripMap API key not configured', 'CONFIG_MISSING');
   }

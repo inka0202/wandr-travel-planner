@@ -44,9 +44,7 @@ export const createTripValidator = [
     .optional()
     .isArray({ max: MAX_ATTRACTIONS })
     .withMessage(`Maximum ${MAX_ATTRACTIONS} attractions per trip`),
-  body('savedAttractions.*')
-    .isObject()
-    .withMessage('Each saved attraction must be an object'),
+  body('savedAttractions.*').isObject().withMessage('Each saved attraction must be an object'),
   body('savedAttractions.*.xid')
     .isString()
     .trim()

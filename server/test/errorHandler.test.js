@@ -135,11 +135,14 @@ describe('errorHandler: 4xx', () => {
 
   it('malformed JSON body does not echo the body', () => {
     // Shape of the error express.json() / body-parser throws
-    const err = Object.assign(new SyntaxError(`Unexpected token 'e', "${SECRET_INPUT}" is not valid JSON`), {
-      type: 'entity.parse.failed',
-      status: 400,
-      statusCode: 400,
-    });
+    const err = Object.assign(
+      new SyntaxError(`Unexpected token 'e', "${SECRET_INPUT}" is not valid JSON`),
+      {
+        type: 'entity.parse.failed',
+        status: 400,
+        statusCode: 400,
+      },
+    );
     const { status, error } = run(prod, err);
     assert.equal(status, 400);
     assert.deepEqual(error, { message: 'Malformed JSON body', code: 'INVALID_JSON' });

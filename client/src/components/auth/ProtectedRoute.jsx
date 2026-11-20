@@ -5,6 +5,7 @@ export function ProtectedRoute() {
   const { user, isLoading } = useAuth();
   const location = useLocation();
   if (isLoading) return <div className="p-8 text-navy-700">Loading…</div>;
-  if (!user) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />;
+  if (!user)
+    return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />;
   return <Outlet />;
 }

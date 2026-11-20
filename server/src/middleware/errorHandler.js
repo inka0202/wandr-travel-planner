@@ -20,7 +20,8 @@ const describeValidationError = (e) => {
  * Otherwise (production, test, unset) 5xx messages are generic and stacks are
  * never sent, so a missing NODE_ENV on the host can't leak internals.
  */
-export const createErrorHandler = ({ isDevelopment = false } = {}) =>
+export const createErrorHandler =
+  ({ isDevelopment = false } = {}) =>
   // eslint-disable-next-line no-unused-vars
   (err, req, res, next) => {
     let status = Number.isInteger(err.statusCode) ? err.statusCode : 500;

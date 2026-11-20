@@ -9,10 +9,10 @@ const router = Router();
 
 // Public, rate-limited
 router.post('/register', registerLimiter, registerValidator, validate, register);
-router.post('/login',    loginLimiter,    loginValidator,    validate, login);
+router.post('/login', loginLimiter, loginValidator, validate, login);
 
 // Protected
-router.get('/me',      verifyJWT, me);
+router.get('/me', verifyJWT, me);
 router.post('/logout', verifyJWT, logout);
 
 export default router;

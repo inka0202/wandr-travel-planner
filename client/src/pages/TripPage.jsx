@@ -55,14 +55,14 @@ export default function TripDetailPage() {
   if (isLoading) {
     return (
       <div className="container py-10">
-        <div className="h-96 bg-white rounded-2xl animate-pulse" />
+        <div className="h-96 animate-pulse rounded-2xl bg-white" />
       </div>
     );
   }
   if (error) {
     return (
       <div className="container py-10">
-        <p className="text-red-700 mb-4">Trip not found.</p>
+        <p className="mb-4 text-red-700">Trip not found.</p>
         <Link to="/trips">
           <Button variant="primary">Back to trips</Button>
         </Link>
@@ -74,42 +74,42 @@ export default function TripDetailPage() {
   return (
     <>
       {/* Sticky header */}
-      <div className="sticky top-16 z-20 bg-cream/95 backdrop-blur border-b border-navy-100">
-        <div className="container py-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="sticky top-16 z-20 border-b border-navy-100 bg-cream/95 backdrop-blur">
+        <div className="container flex flex-wrap items-center justify-between gap-3 py-3">
           <div>
             <Link
               to="/trips"
-              className="flex items-center gap-1 text-sm text-navy-500 hover:text-navy-700 mb-1"
+              className="mb-1 flex items-center gap-1 text-sm text-navy-500 hover:text-navy-700"
             >
               <ArrowLeft size={14} /> All trips
             </Link>
-            <h1 className="font-serif text-2xl sm:text-3xl text-navy-900">
+            <h1 className="font-serif text-2xl text-navy-900 sm:text-3xl">
               {trip.destination.name}
               {trip.destination.country && (
                 <span className="text-navy-500">, {trip.destination.country}</span>
               )}
             </h1>
-            <p className="text-sm text-navy-500 flex items-center gap-1">
+            <p className="flex items-center gap-1 text-sm text-navy-500">
               <Calendar size={14} /> {fmtRange(trip.startDate, trip.endDate)}
             </p>
           </div>
           <Button variant="ghost" onClick={handleDelete} disabled={deleting}>
-            <Trash2 size={16} className="inline mr-1" />
+            <Trash2 size={16} className="mr-1 inline" />
             {deleting ? 'Deleting…' : 'Delete trip'}
           </Button>
         </div>
       </div>
 
       {/* Body */}
-      <div className="container py-8 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-6">
-        <div className="space-y-6 order-2 lg:order-1">
+      <div className="container grid grid-cols-1 gap-6 py-8 lg:grid-cols-[1fr_1.2fr]">
+        <div className="order-2 space-y-6 lg:order-1">
           {showWeather ? (
             <>
               {weatherState.data && <WeatherCard data={weatherState.data} />}
               {weatherState.data && <ForecastStrip daily={weatherState.data.daily} />}
             </>
           ) : (
-            <div className="bg-white rounded-2xl shadow-card p-6">
+            <div className="rounded-2xl bg-white p-6 shadow-card">
               <p className="text-navy-500">
                 This trip has passed. Weather forecast is no longer available.
               </p>
@@ -117,14 +117,14 @@ export default function TripDetailPage() {
           )}
 
           {trip.notes && (
-            <div className="bg-white rounded-2xl shadow-card p-6">
-              <h2 className="font-serif text-lg text-navy-900 mb-2">Notes</h2>
-              <p className="text-navy-700 whitespace-pre-wrap">{trip.notes}</p>
+            <div className="rounded-2xl bg-white p-6 shadow-card">
+              <h2 className="mb-2 font-serif text-lg text-navy-900">Notes</h2>
+              <p className="whitespace-pre-wrap text-navy-700">{trip.notes}</p>
             </div>
           )}
 
           <div>
-            <h2 className="font-serif text-2xl text-navy-900 mb-3">
+            <h2 className="mb-3 font-serif text-2xl text-navy-900">
               Saved attractions ({trip.savedAttractions.length})
             </h2>
             {trip.savedAttractions.length === 0 ? (
@@ -132,9 +132,9 @@ export default function TripDetailPage() {
             ) : (
               <div className="space-y-3">
                 {trip.savedAttractions.map((a) => (
-                  <div key={a._id || a.xid} className="bg-white rounded-xl shadow-soft p-4">
+                  <div key={a._id || a.xid} className="rounded-xl bg-white p-4 shadow-soft">
                     <h3 className="font-serif text-lg text-navy-900">{a.name}</h3>
-                    <p className="text-sm text-navy-500 capitalize">{a.kind}</p>
+                    <p className="text-sm capitalize text-navy-500">{a.kind}</p>
                   </div>
                 ))}
               </div>
@@ -143,7 +143,7 @@ export default function TripDetailPage() {
         </div>
 
         <div className="order-1 lg:order-2">
-          <div className="lg:sticky lg:top-48 h-[40vh] lg:h-[calc(100vh-14rem)]">
+          <div className="h-[40vh] lg:sticky lg:top-48 lg:h-[calc(100vh-14rem)]">
             <TripMap
               center={[trip.destination.latitude, trip.destination.longitude]}
               attractions={trip.savedAttractions}

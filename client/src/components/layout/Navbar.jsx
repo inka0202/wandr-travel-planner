@@ -40,14 +40,13 @@ export default function Navbar() {
 
           {!isLoading && !user && (
             <>
-              <Link
-                to="/login"
-                className="text-sm font-medium text-navy-600 hover:text-navy-900"
-              >
+              <Link to="/login" className="text-sm font-medium text-navy-600 hover:text-navy-900">
                 Log in
               </Link>
               <Link to="/register">
-                <Button variant="primary" size="sm">Sign up</Button>
+                <Button variant="primary" size="sm">
+                  Sign up
+                </Button>
               </Link>
             </>
           )}
