@@ -6,6 +6,7 @@ import { getTrip, deleteTrip as deleteTripApi } from '@/api/trips';
 import { getWeather } from '@/api/weather';
 import WeatherCard from '@/components/weather/WeatherCard';
 import ForecastStrip from '@/components/weather/ForecastStrip';
+import WeatherAttribution from '@/components/weather/WeatherAttribution';
 import TripMap from '@/components/map/TripMap';
 import { Button } from '@/components/ui/Button';
 
@@ -107,6 +108,7 @@ export default function TripDetailPage() {
             <>
               {weatherState.data && <WeatherCard data={weatherState.data} />}
               {weatherState.data && <ForecastStrip daily={weatherState.data.daily} />}
+              {weatherState.data && <WeatherAttribution />}
             </>
           ) : (
             <div className="rounded-2xl bg-white p-6 shadow-card">

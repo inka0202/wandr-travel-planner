@@ -8,6 +8,7 @@ import { getAttractions } from '@/api/attractions';
 import { createTrip } from '@/api/trips';
 import WeatherCard from '@/components/weather/WeatherCard';
 import ForecastStrip from '@/components/weather/ForecastStrip';
+import WeatherAttribution from '@/components/weather/WeatherAttribution';
 import AttractionList from '@/components/attractions/AttractionList';
 import TripMap from '@/components/map/TripMap';
 import { Button } from '@/components/ui/Button';
@@ -149,6 +150,7 @@ export default function SearchResultsPage() {
             <>
               <WeatherCard data={weatherState.data} />
               <ForecastStrip daily={weatherState.data.daily} />
+              <WeatherAttribution />
             </>
           )}
 
