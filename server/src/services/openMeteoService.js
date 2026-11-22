@@ -16,7 +16,10 @@ export const geocodeCity = async (query, count = 5) => {
   url.searchParams.set('language', 'en');
   url.searchParams.set('format', 'json');
 
-  const { ok, data } = await fetchWithTimeout(url);
+  const { ok, data } = await fetchWithTimeout(url, undefined, {
+    service: 'open-meteo-geocode',
+    redact: [query],
+  });
   if (!ok || !data) {
     throw new ApiError(502, 'Geocoding service unavailable', 'GEOCODE_UPSTREAM');
   }
@@ -68,7 +71,10 @@ export const getForecast = async ({ latitude, longitude, timezone = 'auto' }) =>
     ].join(','),
   );
 
-  const { ok, data } = await fetchWithTimeout(url);
+  const { ok, data } = await fetchWithTimeout(url, undefined, {
+    service: 'open-meteo-forecast',
+    redact: [String(latitude), String(longitude), timezone],
+  });
   if (!ok || !data) {
     throw new ApiError(502, 'Weather service unavailable', 'WEATHER_UPSTREAM');
   }
