@@ -53,10 +53,15 @@ export const getForecast = async ({ latitude, longitude, timezone = 'auto' }) =>
     url.searchParams.set(name, value);
   }
 
-  const { ok, data } = await fetchWithTimeout(url, undefined, {
+  const { ok, status, data } = await fetchWithTimeout(url, undefined, {
     service: 'open-meteo-forecast',
     redact: [String(latitude), String(longitude), timezone],
   });
+  // Open-Meteo limits per IP, and Render shares outbound IPs, so this is usually the
+  // daily limit used up by other apps. No retry: it would only spend more of the limit.
+  if (status === 429) {
+    throw new ApiError(503, 'Weather is unavailable right now', 'WEATHER_RATE_LIMITED');
+  }
   if (!ok || !data) {
     throw new ApiError(502, 'Weather service unavailable', 'WEATHER_UPSTREAM');
   }

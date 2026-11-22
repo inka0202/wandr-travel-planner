@@ -152,6 +152,17 @@ describe('GET /api/weather', () => {
     assert.equal(res.body.error.code, 'UPSTREAM_UNAVAILABLE');
   });
 
+  it('503 WEATHER_RATE_LIMITED on an upstream 429, without retrying', async () => {
+    const fetchMock = stubFetch(async () =>
+      json({ error: true, reason: 'Daily API request limit exceeded.' }, 429),
+    );
+    const res = await ctx.api(nextIp()).get('/api/weather?lat=30.4&lng=30.4');
+    assert.equal(res.status, 503);
+    assert.equal(res.body.error.code, 'WEATHER_RATE_LIMITED');
+    assert.equal(res.body.error.message, 'Internal Server Error'); // generic 5xx outside dev
+    assert.equal(fetchMock.mock.callCount(), 1);
+  });
+
   it('502 WEATHER_UPSTREAM on an upstream error status, and errors are not cached', async () => {
     const fetchMock = stubFetch(async () => json({ reason: 'boom' }, 500));
     const api = ctx.api(nextIp());
