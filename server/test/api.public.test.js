@@ -88,6 +88,16 @@ describe('GET /api/weather', () => {
     const url = new URL(fetchMock.mock.calls[0].arguments[0]);
     assert.equal(url.hostname, 'api.open-meteo.com');
     assert.equal(url.searchParams.get('timezone'), 'Europe/Warsaw');
+    assert.deepEqual(Object.fromEntries(url.searchParams), {
+      latitude: '52.23',
+      longitude: '21.01',
+      timezone: 'Europe/Warsaw',
+      forecast_days: '7',
+      current:
+        'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m',
+      daily:
+        'temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,wind_speed_10m_max',
+    });
   });
 
   it('a second identical request is served from the cache', async () => {
