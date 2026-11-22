@@ -121,14 +121,14 @@ README says UptimeRobot pings `/health` every 5 minutes to avoid cold starts.
 Indexes: `email` unique, `user`, and `{ user: 1, createdAt: -1 }`. `autoIndex` is **off in production**
 ([db.js:15](../server/src/config/db.js#L15)), so these indexes exist only if they were built earlier (see §6).
 
-### External API calls (all go through the server except map tiles)
+### External API calls (all go through the server except map tiles and, since decision 0003, the forecast)
 
-| API                                                           | Server function                                                                                     | Endpoint                                                                                                  | Caller (client)                                                                  | Cache TTL |
-| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------- |
-| Open-Meteo Geocoding `geocoding-api.open-meteo.com/v1/search` | `geocodeCity` [openMeteoService.js:18](../server/src/services/openMeteoService.js#L18)              | GET `/api/geocode` ([geocode.controller.js](../server/src/controllers/geocode.controller.js))             | [api/geocode.js](../client/src/api/geocode.js) ← `SearchBar`                     | 7 days    |
-| Open-Meteo Forecast `api.open-meteo.com/v1/forecast`          | `getForecast` [openMeteoService.js:71](../server/src/services/openMeteoService.js#L71)              | GET `/api/weather` ([weather.controller.js](../server/src/controllers/weather.controller.js))             | [api/weather.js](../client/src/api/weather.js) ← `SearchResultsPage`, `TripPage` | 30 min    |
-| OpenTripMap `api.opentripmap.com/0.1/en/places/radius`        | `getAttractionsNearby` [openTripMapService.js:31](../server/src/services/openTripMapService.js#L31) | GET `/api/attractions` ([attractions.controller.js](../server/src/controllers/attractions.controller.js)) | [api/attractions.js](../client/src/api/attractions.js) ← `SearchResultsPage`     | 24 h      |
-| OpenStreetMap tiles `{s}.tile.openstreetmap.org`              | – (browser)                                                                                         | –                                                                                                         | [TripMap.jsx](../client/src/components/map/TripMap.jsx)                          | browser   |
+| API                                                           | Server function                                                                                     | Endpoint                                                                                                  | Caller (client)                                                                                                                                                           | Cache TTL            |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| Open-Meteo Geocoding `geocoding-api.open-meteo.com/v1/search` | `geocodeCity` [openMeteoService.js:18](../server/src/services/openMeteoService.js#L18)              | GET `/api/geocode` ([geocode.controller.js](../server/src/controllers/geocode.controller.js))             | [api/geocode.js](../client/src/api/geocode.js) ← `SearchBar`                                                                                                              | 7 days               |
+| Open-Meteo Forecast `api.open-meteo.com/v1/forecast`          | `getForecast` [openMeteoService.js:71](../server/src/services/openMeteoService.js#L71)              | GET `/api/weather` ([weather.controller.js](../server/src/controllers/weather.controller.js))             | none since decision 0003: the browser calls Open-Meteo directly ([lib/openMeteo.js](../client/src/lib/openMeteo.js) ← `api/weather.js` ← `SearchResultsPage`, `TripPage`) | 30 min (server only) |
+| OpenTripMap `api.opentripmap.com/0.1/en/places/radius`        | `getAttractionsNearby` [openTripMapService.js:31](../server/src/services/openTripMapService.js#L31) | GET `/api/attractions` ([attractions.controller.js](../server/src/controllers/attractions.controller.js)) | [api/attractions.js](../client/src/api/attractions.js) ← `SearchResultsPage`                                                                                              | 24 h                 |
+| OpenStreetMap tiles `{s}.tile.openstreetmap.org`              | – (browser)                                                                                         | –                                                                                                         | [TripMap.jsx](../client/src/components/map/TripMap.jsx)                                                                                                                   | browser              |
 
 All three server calls go through `utils/fetchWithTimeout.js` (8 s timeout since Group 1, no retry). The OpenTripMap key goes in the query string, server-side only.
 
@@ -334,19 +334,27 @@ Vercel deploy gating, coverage thresholds, the Vite major upgrade, the date-help
 
 ### Production bug, out of band: branch fix/weather-upstream
 
-On Render, `GET /api/weather` always returns 502 `WEATHER_UPSTREAM`; the same request works
-locally. The Open-Meteo URL has no date or TZ-dependent parts, and the error means a response
-did arrive (non-2xx or non-JSON), so not DNS or timeout. Suspected: Open-Meteo per-IP limit (429)
-or block (403) on Render's shared outbound IPs.
+On Render, `GET /api/weather` always returned 502 `WEATHER_UPSTREAM`; the same request worked
+locally. The Open-Meteo URL has no date or TZ-dependent parts, and the error meant a response
+did arrive (non-2xx or non-JSON), so not DNS or timeout.
 
-- Phase 1 (diagnostics only): `fetchWithTimeout` logs one `[upstream]` line per failed upstream
+- Phase 1 (diagnostics, done): `fetchWithTimeout` logs one `[upstream]` line per failed upstream
   response: service label, status, Retry-After, the upstream reason (cut to 200 chars). Never the
   URL, the API key or request values (redacted). No change to what the user sees.
-- Phase 2: decided after reading the Render log. Options: a 400 parameter fix (tests under several
-  `TZ`), or for 429/403 a 503 with its own code (e.g. `WEATHER_RATE_LIMITED`, client keys on the
-  code because 5xx messages are generic), optional stale-on-error cache (needs a decision record,
-  overlaps Group 4), or another route (browser-side call, paid key, other provider; needs a
-  decision record because it breaks "every external call goes through the server").
+- **Cause (from that log):** 429 "Daily API request limit exceeded". Open-Meteo limits per IP
+  (10,000/day) and Render's free plan shares outbound IPs with other apps, so other traffic uses
+  up the limit. No server-side fix makes this reliable.
+- Phase 2 (done), see decision 0003 (forecast from the browser; kept locally, not in git):
+  - The browser fetches the forecast directly (`client/src/lib/openMeteo.js`): same params, same
+    response shape, plain fetch (never the axios instance with the JWT), no referrer, 10 s timeout,
+    `WeatherError` codes. "Weather data by Open-Meteo.com" is shown next to the forecast.
+  - The mapping is duplicated on purpose (`server/src/utils/forecast.js` + `weatherCodeMap.js`);
+    `client/test/openMeteo.parity.test.js` fails if the copies drift.
+  - `/api/weather` stays with no client callers; an upstream 429 maps to 503 `WEATHER_RATE_LIMITED`
+    (no retry). The "blocked until Retry-After" design is parked in decision 0003 for future
+    server-side weather jobs.
+  - Geocoding is unchanged. If the log shows `open-meteo-geocode` 429, move it to the browser the
+    same way (amend decision 0003).
 - Related, not fixed here: `useFetch` keeps old `data` when a new request fails (see fix/usefetch-stale);
   TripPage shows nothing on a weather error (Group 5).
 
