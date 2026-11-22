@@ -38,13 +38,13 @@ const TZ = 'Europe/Warsaw';
 const weatherPath = `/api/weather?lat=${LAT}&lng=${LNG}&tz=${encodeURIComponent(TZ)}`;
 
 describe('[upstream] logging', () => {
-  it('weather 429: logs status, Retry-After and reason; response unchanged', async () => {
+  it('weather 429: logs status, Retry-After and reason', async () => {
     const reason = 'Minutely API request limit exceeded. Please try again in one minute.';
     stubFetch(async () => jsonResponse({ error: true, reason }, 429, { 'Retry-After': '60' }));
 
     const res = await ctx.api(nextIp()).get(weatherPath);
-    assert.equal(res.status, 502);
-    assert.equal(res.body.error.code, 'WEATHER_UPSTREAM');
+    assert.equal(res.status, 503);
+    assert.equal(res.body.error.code, 'WEATHER_RATE_LIMITED');
     assert.equal(res.body.error.message, 'Internal Server Error');
 
     const logs = upstreamLogs();

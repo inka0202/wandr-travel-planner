@@ -1,7 +1,10 @@
 // WMO Weather interpretation codes → human-readable text
 // https://open-meteo.com/en/docs#weathervariables
+// The browser has a copy of WMO_CODES in client/src/lib/openMeteo.js (decision 0003).
+// Keep this file pure (no env, no npm imports): client/test/openMeteo.parity.test.js
+// imports it by relative path, outside the server package.
 
-const WMO_CODES = {
+export const WMO_CODES = {
   0: 'Clear sky',
   1: 'Mainly clear',
   2: 'Partly cloudy',
