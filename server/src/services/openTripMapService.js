@@ -24,7 +24,10 @@ export const getAttractionsNearby = async ({ latitude, longitude, radius = 5000,
   url.searchParams.set('limit', String(limit));
   url.searchParams.set('apikey', env.OPENTRIPMAP_API_KEY);
 
-  const { ok, data } = await fetchWithTimeout(url);
+  const { ok, data } = await fetchWithTimeout(url, undefined, {
+    service: 'opentripmap',
+    redact: [env.OPENTRIPMAP_API_KEY, String(latitude), String(longitude)],
+  });
   if (!ok || !Array.isArray(data)) {
     throw new ApiError(502, 'Attractions service unavailable', 'ATTRACTIONS_UPSTREAM');
   }

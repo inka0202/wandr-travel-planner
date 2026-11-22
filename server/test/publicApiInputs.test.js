@@ -4,7 +4,11 @@ import http from 'node:http';
 import { parseCoord } from '../src/utils/parseCoord.js';
 import { isValidTimeZone, MAX_TZ_LENGTH } from '../src/utils/timezone.js';
 import { getCached, setCached, MAX_ENTRIES } from '../src/utils/cache.js';
-import { fetchWithTimeout } from '../src/utils/fetchWithTimeout.js';
+import {
+  fetchWithTimeout,
+  describeUpstreamFailure,
+  MAX_REASON_LENGTH,
+} from '../src/utils/fetchWithTimeout.js';
 
 const rejectsCoord = (val) =>
   assert.throws(
@@ -134,11 +138,65 @@ describe('fetchWithTimeout', () => {
     });
   });
 
+  it('does not log without a service label, even on failure', async (t) => {
+    const warn = t.mock.method(console, 'warn', () => {});
+    await fetchWithTimeout(`${base}/html500`);
+    assert.equal(warn.mock.callCount(), 0);
+  });
+
   it('maps a network failure to 502 UPSTREAM_UNAVAILABLE', async () => {
     // Port 1 on loopback: connection refused.
     await assert.rejects(fetchWithTimeout('http://127.0.0.1:1/', 2000), {
       statusCode: 502,
       code: 'UPSTREAM_UNAVAILABLE',
     });
+  });
+});
+
+describe('describeUpstreamFailure', () => {
+  const base = { service: 's', status: 429 };
+
+  it('prefers `reason`, falls back to a string `error`, else no reason', () => {
+    assert.equal(
+      describeUpstreamFailure({ ...base, data: { reason: 'r', error: true } }).reason,
+      'r',
+    );
+    assert.equal(describeUpstreamFailure({ ...base, data: { error: 'e' } }).reason, 'e');
+    assert.deepEqual(describeUpstreamFailure({ ...base, data: { error: true } }), base);
+    assert.deepEqual(describeUpstreamFailure({ ...base, data: [] }), base);
+  });
+
+  it('marks a non-JSON body with its content type', () => {
+    assert.equal(
+      describeUpstreamFailure({ ...base, data: null, contentType: 'text/html' }).reason,
+      '(non-JSON body, text/html)',
+    );
+    assert.equal(
+      describeUpstreamFailure({ ...base, data: null }).reason,
+      '(non-JSON body, no content-type)',
+    );
+  });
+
+  it('includes Retry-After only when present', () => {
+    assert.equal(describeUpstreamFailure({ ...base, data: {}, retryAfter: '30' }).retryAfter, '30');
+    assert.ok(!('retryAfter' in describeUpstreamFailure({ ...base, data: {}, retryAfter: null })));
+  });
+
+  it('redacts every given value (ignoring empty ones) before cutting to length', () => {
+    const out = describeUpstreamFailure({
+      ...base,
+      data: { reason: 'key=SECRET lat=1.5 SECRET' },
+      redact: ['SECRET', '1.5', '', undefined],
+    });
+    assert.equal(out.reason, 'key=[redacted] lat=[redacted] [redacted]');
+
+    // A secret straddling the cut point must not survive half-cut.
+    const long = describeUpstreamFailure({
+      ...base,
+      data: { reason: `${'a'.repeat(MAX_REASON_LENGTH - 3)}SECRET` },
+      redact: ['SECRET'],
+    });
+    assert.ok(!long.reason.includes('SEC'));
+    assert.equal(long.reason.length, MAX_REASON_LENGTH + 1);
   });
 });

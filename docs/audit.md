@@ -130,7 +130,7 @@ Indexes: `email` unique, `user`, and `{ user: 1, createdAt: -1 }`. `autoIndex` i
 | OpenTripMap `api.opentripmap.com/0.1/en/places/radius`        | `getAttractionsNearby` [openTripMapService.js:31](../server/src/services/openTripMapService.js#L31) | GET `/api/attractions` ([attractions.controller.js](../server/src/controllers/attractions.controller.js)) | [api/attractions.js](../client/src/api/attractions.js) ← `SearchResultsPage`     | 24 h      |
 | OpenStreetMap tiles `{s}.tile.openstreetmap.org`              | – (browser)                                                                                         | –                                                                                                         | [TripMap.jsx](../client/src/components/map/TripMap.jsx)                          | browser   |
 
-All three server calls use the global `fetch` with **no timeout** and no retry. The OpenTripMap key goes in the query string, server-side only.
+All three server calls go through `utils/fetchWithTimeout.js` (8 s timeout since Group 1, no retry). The OpenTripMap key goes in the query string, server-side only.
 
 ### Where the JWT is issued and checked
 
@@ -199,6 +199,8 @@ Client-side but similar: favourited attractions on the search page are only Reac
 - On `TripPage`, weather loading and errors are not shown (just empty space). Delete failures in `TripPage` and `TripCard` are silent.
 - The router has no `errorElement`, so any render error shows React Router's default developer error screen.
 - No code splitting: Leaflet and every page are in the main bundle.
+- Upstream failures were logged without the upstream status or reason (only `WEATHER_UPSTREAM` etc.), so production 502s couldn't be diagnosed. Fixed by fix/weather-upstream Phase 1 (§8).
+- Privacy: morgan `combined` logs the full request URL in production, so the search query (`q`), destination coords, `tz` and the client IP end up in the Render log. Separate from the upstream logging, which redacts these.
 - `TripPage` creates a new `Set` on every render, and `orangeMarker()` creates a new `divIcon` per marker per render, so all markers are re-created on every re-render.
 
 ### Responsive layout and accessibility
@@ -329,6 +331,24 @@ Check that the Actions tab is green.
 
 Out of scope: Playwright e2e (at the end of the project), husky / pre-commit hooks,
 Vercel deploy gating, coverage thresholds, the Vite major upgrade, the date-helper tests (Group 3).
+
+### Production bug, out of band: branch fix/weather-upstream
+
+On Render, `GET /api/weather` always returns 502 `WEATHER_UPSTREAM`; the same request works
+locally. The Open-Meteo URL has no date or TZ-dependent parts, and the error means a response
+did arrive (non-2xx or non-JSON), so not DNS or timeout. Suspected: Open-Meteo per-IP limit (429)
+or block (403) on Render's shared outbound IPs.
+
+- Phase 1 (diagnostics only): `fetchWithTimeout` logs one `[upstream]` line per failed upstream
+  response: service label, status, Retry-After, the upstream reason (cut to 200 chars). Never the
+  URL, the API key or request values (redacted). No change to what the user sees.
+- Phase 2: decided after reading the Render log. Options: a 400 parameter fix (tests under several
+  `TZ`), or for 429/403 a 503 with its own code (e.g. `WEATHER_RATE_LIMITED`, client keys on the
+  code because 5xx messages are generic), optional stale-on-error cache (needs a decision record,
+  overlaps Group 4), or another route (browser-side call, paid key, other provider; needs a
+  decision record because it breaks "every external call goes through the server").
+- Related, not fixed here: `useFetch` keeps old `data` when a new request fails (see fix/usefetch-stale);
+  TripPage shows nothing on a weather error (Group 5).
 
 ### Right after Group 2, before Group 3: branch fix/usefetch-stale
 
