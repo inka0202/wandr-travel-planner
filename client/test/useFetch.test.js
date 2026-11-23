@@ -209,4 +209,62 @@ describe('useFetch', () => {
     assert.equal(result.current.data, 'weather:Rome');
     assert.equal(result.current.isLoading, false);
   });
+
+  it('ignores a stale rejection that arrives after deps changed', async () => {
+    const requests = {};
+    const { result, rerender } = renderHook(
+      ({ city }) =>
+        useFetch(() => {
+          requests[city] = deferred();
+          return requests[city].promise;
+        }, [city]),
+      { initialProps: { city: 'Paris' } },
+    );
+
+    rerender({ city: 'Rome' }); // Paris request is still in flight
+    await act(async () => requests.Paris.reject(new Error('Paris fails'))); // stale
+    assert.equal(result.current.error, null);
+    assert.equal(result.current.isLoading, true);
+
+    await act(async () => requests.Rome.resolve('weather:Rome'));
+    assert.equal(result.current.data, 'weather:Rome');
+    assert.equal(result.current.error, null);
+    assert.equal(result.current.isLoading, false);
+  });
+
+  it('refetch during a request: only the newer response is applied', async () => {
+    const requests = [];
+    const { result } = renderHook(() =>
+      useFetch(() => {
+        const d = deferred();
+        requests.push(d);
+        return d.promise;
+      }, []),
+    );
+
+    act(() => result.current.refetch()); // first request is still in flight
+    assert.equal(requests.length, 2);
+
+    await act(async () => requests[0].resolve('first')); // stale
+    assert.equal(result.current.data, null);
+    assert.equal(result.current.isLoading, true);
+
+    await act(async () => requests[1].resolve('second'));
+    assert.equal(result.current.data, 'second');
+    assert.equal(result.current.isLoading, false);
+  });
+
+  it('ignores a response that arrives after skip turned on', async () => {
+    const d = deferred();
+    const { result, rerender } = renderHook(({ skip }) => useFetch(() => d.promise, [], { skip }), {
+      initialProps: { skip: false },
+    });
+
+    rerender({ skip: true }); // request is still in flight
+    assert.equal(result.current.isLoading, false);
+
+    await act(async () => d.resolve('late'));
+    assert.equal(result.current.data, null);
+    assert.equal(result.current.isLoading, false);
+  });
 });
