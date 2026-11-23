@@ -6,6 +6,7 @@ import { geocodeCity } from '@/api/geocode';
 import { FormField } from '@/components/ui/FormField';
 import { Button } from '@/components/ui/Button';
 import { addDaysISO, todayISO } from '@/lib/dates';
+import { endDateError, maxEndISO, maxStartISO, startDateError } from '@/lib/tripDates';
 
 export default function SearchBar({ variant = 'hero' }) {
   const navigate = useNavigate();
@@ -26,6 +27,10 @@ export default function SearchBar({ variant = 'hero' }) {
   });
 
   const startDate = watch('startDate');
+  // Same limits as the server's "Save trip" check. The form is noValidate, so min/max only limit
+  // the date picker; the validate rules below also catch typed dates.
+  const today = todayISO();
+  const endMax = maxEndISO(startDate) ?? undefined;
 
   const onSubmit = async (form) => {
     setSubmitError(null);
@@ -76,19 +81,24 @@ export default function SearchBar({ variant = 'hero' }) {
       <FormField
         label="Start date"
         type="date"
-        min={todayISO()}
+        min={today}
+        max={maxStartISO()}
         error={errors.startDate?.message}
-        {...register('startDate', { required: 'Required' })}
+        {...register('startDate', {
+          required: 'Required',
+          validate: (val) => startDateError(val) ?? true,
+          deps: ['endDate'], // re-check the end date when the start changes
+        })}
       />
       <FormField
         label="End date"
         type="date"
-        min={startDate || todayISO()}
+        min={startDate || today}
+        max={endMax}
         error={errors.endDate?.message}
         {...register('endDate', {
           required: 'Required',
-          validate: (val, all) =>
-            new Date(val) >= new Date(all.startDate) || 'End must be after start',
+          validate: (val, all) => endDateError(all.startDate, val) ?? true,
         })}
       />
       <div className="flex items-end">
