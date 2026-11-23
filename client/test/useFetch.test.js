@@ -129,11 +129,7 @@ describe('useFetch', () => {
     assert.equal(result.current.data, null);
   });
 
-  // TODO(bug): useFetch applies stale responses after deps change. All effect runs
-  // share one cancelRef: the cleanup sets it to true, but the next run resets it to
-  // false straight away, so the older request's .then() still calls setData.
-  // A slow response for the previous search can overwrite the current one.
-  it.skip('ignores a stale response that arrives after deps changed', async () => {
+  it('ignores a stale response that arrives after deps changed', async () => {
     const requests = {};
     const { result, rerender } = renderHook(
       ({ city }) =>
@@ -145,10 +141,35 @@ describe('useFetch', () => {
     );
 
     rerender({ city: 'Rome' }); // Paris request is still in flight
+    assert.equal(result.current.isLoading, true);
     await act(async () => requests.Rome.resolve('weather:Rome'));
     assert.equal(result.current.data, 'weather:Rome');
+    assert.equal(result.current.isLoading, false);
 
     await act(async () => requests.Paris.resolve('weather:Paris')); // late, stale
     assert.equal(result.current.data, 'weather:Rome');
+    assert.equal(result.current.isLoading, false);
+    assert.equal(result.current.error, null);
+  });
+
+  it('keeps loading when a stale response settles before the current one', async () => {
+    const requests = {};
+    const { result, rerender } = renderHook(
+      ({ city }) =>
+        useFetch(() => {
+          requests[city] = deferred();
+          return requests[city].promise;
+        }, [city]),
+      { initialProps: { city: 'Paris' } },
+    );
+
+    rerender({ city: 'Rome' }); // Paris request is still in flight
+    await act(async () => requests.Paris.resolve('weather:Paris')); // stale, arrives first
+    assert.equal(result.current.data, null);
+    assert.equal(result.current.isLoading, true);
+
+    await act(async () => requests.Rome.resolve('weather:Rome'));
+    assert.equal(result.current.data, 'weather:Rome');
+    assert.equal(result.current.isLoading, false);
   });
 });
