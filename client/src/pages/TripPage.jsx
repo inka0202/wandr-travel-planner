@@ -9,18 +9,12 @@ import ForecastStrip from '@/components/weather/ForecastStrip';
 import WeatherAttribution from '@/components/weather/WeatherAttribution';
 import TripMap from '@/components/map/TripMap';
 import { Button } from '@/components/ui/Button';
+import { fmtRange, toDateOnly, todayISO } from '@/lib/dates';
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
-const isFuture = (endDate) => endDate >= todayISO();
-
-const fmtRange = (start, end) => {
-  const s = new Date(start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const e = new Date(end).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-  return `${s} — ${e}`;
+// The trip hasn't ended yet in the user's own time zone (a trip ending today still counts).
+const isFuture = (endDate) => {
+  const end = toDateOnly(endDate);
+  return end !== null && end >= todayISO();
 };
 
 export default function TripDetailPage() {

@@ -5,9 +5,7 @@ import { Search } from 'lucide-react';
 import { geocodeCity } from '@/api/geocode';
 import { FormField } from '@/components/ui/FormField';
 import { Button } from '@/components/ui/Button';
-
-const today = () => new Date().toISOString().slice(0, 10);
-const inDays = (n) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+import { addDaysISO, todayISO } from '@/lib/dates';
 
 export default function SearchBar({ variant = 'hero' }) {
   const navigate = useNavigate();
@@ -22,8 +20,8 @@ export default function SearchBar({ variant = 'hero' }) {
     mode: 'onBlur',
     defaultValues: {
       destination: '',
-      startDate: today(),
-      endDate: inDays(7),
+      startDate: todayISO(),
+      endDate: addDaysISO(todayISO(), 7),
     },
   });
 
@@ -78,14 +76,14 @@ export default function SearchBar({ variant = 'hero' }) {
       <FormField
         label="Start date"
         type="date"
-        min={today()}
+        min={todayISO()}
         error={errors.startDate?.message}
         {...register('startDate', { required: 'Required' })}
       />
       <FormField
         label="End date"
         type="date"
-        min={startDate || today()}
+        min={startDate || todayISO()}
         error={errors.endDate?.message}
         {...register('endDate', {
           required: 'Required',
