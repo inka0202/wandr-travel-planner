@@ -129,11 +129,7 @@ describe('useFetch', () => {
     assert.equal(result.current.data, null);
   });
 
-  // TODO(bug): useFetch applies stale responses after deps change. All effect runs
-  // share one cancelRef: the cleanup sets it to true, but the next run resets it to
-  // false straight away, so the older request's .then() still calls setData.
-  // A slow response for the previous search can overwrite the current one.
-  it.skip('ignores a stale response that arrives after deps changed', async () => {
+  it('ignores a stale response that arrives after deps changed', async () => {
     const requests = {};
     const { result, rerender } = renderHook(
       ({ city }) =>
@@ -145,10 +141,130 @@ describe('useFetch', () => {
     );
 
     rerender({ city: 'Rome' }); // Paris request is still in flight
+    assert.equal(result.current.isLoading, true);
     await act(async () => requests.Rome.resolve('weather:Rome'));
     assert.equal(result.current.data, 'weather:Rome');
+    assert.equal(result.current.isLoading, false);
 
     await act(async () => requests.Paris.resolve('weather:Paris')); // late, stale
     assert.equal(result.current.data, 'weather:Rome');
+    assert.equal(result.current.isLoading, false);
+    assert.equal(result.current.error, null);
+  });
+
+  it('keeps the old data while the next request is loading', async () => {
+    const requests = {};
+    const { result, rerender } = renderHook(
+      ({ city }) =>
+        useFetch(() => {
+          requests[city] = deferred();
+          return requests[city].promise;
+        }, [city]),
+      { initialProps: { city: 'Paris' } },
+    );
+    await act(async () => requests.Paris.resolve('weather:Paris'));
+
+    rerender({ city: 'Rome' });
+    assert.equal(result.current.isLoading, true);
+    assert.equal(result.current.data, 'weather:Paris');
+  });
+
+  it('clears the old data when the next request fails', async () => {
+    const requests = {};
+    const { result, rerender } = renderHook(
+      ({ city }) =>
+        useFetch(() => {
+          requests[city] = deferred();
+          return requests[city].promise;
+        }, [city]),
+      { initialProps: { city: 'Paris' } },
+    );
+    await act(async () => requests.Paris.resolve('weather:Paris'));
+
+    rerender({ city: 'Rome' });
+    const err = new Error('Rome fails');
+    await act(async () => requests.Rome.reject(err));
+    assert.equal(result.current.data, null);
+    assert.equal(result.current.error, err);
+    assert.equal(result.current.isLoading, false);
+  });
+
+  it('keeps loading when a stale response settles before the current one', async () => {
+    const requests = {};
+    const { result, rerender } = renderHook(
+      ({ city }) =>
+        useFetch(() => {
+          requests[city] = deferred();
+          return requests[city].promise;
+        }, [city]),
+      { initialProps: { city: 'Paris' } },
+    );
+
+    rerender({ city: 'Rome' }); // Paris request is still in flight
+    await act(async () => requests.Paris.resolve('weather:Paris')); // stale, arrives first
+    assert.equal(result.current.data, null);
+    assert.equal(result.current.isLoading, true);
+
+    await act(async () => requests.Rome.resolve('weather:Rome'));
+    assert.equal(result.current.data, 'weather:Rome');
+    assert.equal(result.current.isLoading, false);
+  });
+
+  it('ignores a stale rejection that arrives after deps changed', async () => {
+    const requests = {};
+    const { result, rerender } = renderHook(
+      ({ city }) =>
+        useFetch(() => {
+          requests[city] = deferred();
+          return requests[city].promise;
+        }, [city]),
+      { initialProps: { city: 'Paris' } },
+    );
+
+    rerender({ city: 'Rome' }); // Paris request is still in flight
+    await act(async () => requests.Paris.reject(new Error('Paris fails'))); // stale
+    assert.equal(result.current.error, null);
+    assert.equal(result.current.isLoading, true);
+
+    await act(async () => requests.Rome.resolve('weather:Rome'));
+    assert.equal(result.current.data, 'weather:Rome');
+    assert.equal(result.current.error, null);
+    assert.equal(result.current.isLoading, false);
+  });
+
+  it('refetch during a request: only the newer response is applied', async () => {
+    const requests = [];
+    const { result } = renderHook(() =>
+      useFetch(() => {
+        const d = deferred();
+        requests.push(d);
+        return d.promise;
+      }, []),
+    );
+
+    act(() => result.current.refetch()); // first request is still in flight
+    assert.equal(requests.length, 2);
+
+    await act(async () => requests[0].resolve('first')); // stale
+    assert.equal(result.current.data, null);
+    assert.equal(result.current.isLoading, true);
+
+    await act(async () => requests[1].resolve('second'));
+    assert.equal(result.current.data, 'second');
+    assert.equal(result.current.isLoading, false);
+  });
+
+  it('ignores a response that arrives after skip turned on', async () => {
+    const d = deferred();
+    const { result, rerender } = renderHook(({ skip }) => useFetch(() => d.promise, [], { skip }), {
+      initialProps: { skip: false },
+    });
+
+    rerender({ skip: true }); // request is still in flight
+    assert.equal(result.current.isLoading, false);
+
+    await act(async () => d.resolve('late'));
+    assert.equal(result.current.data, null);
+    assert.equal(result.current.isLoading, false);
   });
 });

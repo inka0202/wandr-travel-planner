@@ -355,15 +355,22 @@ did arrive (non-2xx or non-JSON), so not DNS or timeout.
     server-side weather jobs.
   - Geocoding is unchanged. If the log shows `open-meteo-geocode` 429, move it to the browser the
     same way (amend decision 0003).
-- Related, not fixed here: `useFetch` keeps old `data` when a new request fails (see fix/usefetch-stale);
-  TripPage shows nothing on a weather error (Group 5).
+- Related, not fixed here: `useFetch` kept old `data` when a new request failed (fixed by
+  fix/usefetch-stale); TripPage shows nothing on a weather error (Group 5).
 
 ### Right after Group 2, before Group 3: branch fix/usefetch-stale
 
-- fix/usefetch-stale: ignore or abort stale responses when deps change, un-skip the test.
-  (Found by the Group 2 client tests: `useFetch` shares one `cancelRef` across effect runs, so a
-  slow response for the previous deps overwrites the current data. Test:
-  `client/test/useFetch.test.js`, marked `TODO(bug)`.)
+- fix/usefetch-stale (done): ignore stale responses when deps change, un-skip the test.
+  (Found by the Group 2 client tests: `useFetch` shared one `cancelRef` across effect runs, so a
+  slow response for the previous deps overwrote the current data.)
+  - Each effect run has its own `ignore` flag; every state update (`data`, `error`, `isLoading`)
+    sits behind it, so a superseded request (deps change, `refetch()`, `skip` on, unmount)
+    changes nothing, and can't end the loading state of the current one.
+  - Also clears `data` when the current request fails (no old forecast next to the error).
+    While a new request loads, the old `data` still shows.
+  - Ignore only, no abort: superseded requests still finish. Aborting is deferred (Group 5).
+  - Tests: `client/test/useFetch.test.js` (stale response in both orders, stale rejection, refetch and
+    skip mid-flight, clear on error, old data kept while loading).
 
 ### Group 3. Clean-up: third, branch chore/cleanup
 
@@ -394,6 +401,12 @@ did arrive (non-2xx or non-JSON), so not DNS or timeout.
 - With trip editing: delete flow implemented twice, notes endpoint without UI, TripPage weather
   and delete errors, map markers re-created on every render, keeping favourites through the
   login redirect (draft trip on the device).
+  Save trip during a new search's loading can save the previous destination's favourites
+  ("Save trip" is disabled only while saving, `favoritedIds` isn't reset on a new search, and
+  the old attractions stay in `data` while the new ones load).
+- Abort stale requests (AbortController via `api/*` and `lib/openMeteo.js`). Worthwhile only with
+  search-as-you-type or many in-flight requests. `useFetch` calls `fetchFn()` with no arguments,
+  so adding `{ signal }` later is not a breaking change.
 - With account settings: replace the ProfilePage stub.
 - With password reset: login timing difference for unknown emails (use a dummy bcrypt compare),
   and forgot-password must respond the same way and in the same time whether the email exists
