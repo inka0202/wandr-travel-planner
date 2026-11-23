@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
  *
  * Only the latest request may update state: when deps change, refetch() runs,
  * skip turns on, or the component unmounts, the older request's result is ignored.
+ * While a new request loads, the previous data stays; if it fails, data is cleared.
  * fetchFn is called with no arguments (an AbortSignal may be passed later).
  *
  * Usage:
@@ -39,6 +40,7 @@ export function useFetch(fetchFn, deps = [], { skip = false } = {}) {
       })
       .catch((err) => {
         if (ignore) return;
+        setData(null); // don't show the previous deps' data next to this error
         setError(err);
         setIsLoading(false);
       });

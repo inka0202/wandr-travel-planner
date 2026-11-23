@@ -152,6 +152,43 @@ describe('useFetch', () => {
     assert.equal(result.current.error, null);
   });
 
+  it('keeps the old data while the next request is loading', async () => {
+    const requests = {};
+    const { result, rerender } = renderHook(
+      ({ city }) =>
+        useFetch(() => {
+          requests[city] = deferred();
+          return requests[city].promise;
+        }, [city]),
+      { initialProps: { city: 'Paris' } },
+    );
+    await act(async () => requests.Paris.resolve('weather:Paris'));
+
+    rerender({ city: 'Rome' });
+    assert.equal(result.current.isLoading, true);
+    assert.equal(result.current.data, 'weather:Paris');
+  });
+
+  it('clears the old data when the next request fails', async () => {
+    const requests = {};
+    const { result, rerender } = renderHook(
+      ({ city }) =>
+        useFetch(() => {
+          requests[city] = deferred();
+          return requests[city].promise;
+        }, [city]),
+      { initialProps: { city: 'Paris' } },
+    );
+    await act(async () => requests.Paris.resolve('weather:Paris'));
+
+    rerender({ city: 'Rome' });
+    const err = new Error('Rome fails');
+    await act(async () => requests.Rome.reject(err));
+    assert.equal(result.current.data, null);
+    assert.equal(result.current.error, err);
+    assert.equal(result.current.isLoading, false);
+  });
+
   it('keeps loading when a stale response settles before the current one', async () => {
     const requests = {};
     const { result, rerender } = renderHook(
