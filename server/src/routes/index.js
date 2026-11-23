@@ -5,11 +5,8 @@ import weatherRoutes from './weather.routes.js';
 import attractionsRoutes from './attractions.routes.js';
 import tripRoutes from './trip.routes.js';
 
+// The health check is GET /health in app.js (Render health check + UptimeRobot), not under /api.
 const router = Router();
-
-router.get('/health', (req, res) =>
-  res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() }),
-);
 
 router.use('/auth', authRoutes);
 router.use('/geocode', geocodeRoutes);
