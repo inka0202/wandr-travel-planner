@@ -36,17 +36,3 @@ export const WMO_CODES = {
 };
 
 export const wmoCodeToText = (code) => WMO_CODES[code] ?? 'Unknown';
-
-/**
- * Group codes into 6 "weather types" for icon selection on the client.
- * Maps to lucide-react icons in the client.
- */
-export const wmoCodeToGroup = (code) => {
-  if (code === 0 || code === 1) return 'clear';
-  if (code === 2) return 'partly-cloudy';
-  if (code === 3 || code === 45 || code === 48) return 'cloudy';
-  if (code >= 51 && code <= 67) return 'rain';
-  if ((code >= 80 && code <= 82) || code === 95) return 'storm';
-  if (code >= 71 && code <= 86) return 'snow';
-  return 'cloudy';
-};

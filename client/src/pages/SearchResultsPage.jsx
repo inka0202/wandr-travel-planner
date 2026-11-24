@@ -12,16 +12,7 @@ import WeatherAttribution from '@/components/weather/WeatherAttribution';
 import AttractionList from '@/components/attractions/AttractionList';
 import TripMap from '@/components/map/TripMap';
 import { Button } from '@/components/ui/Button';
-
-const fmtRange = (start, end) => {
-  const s = new Date(start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const e = new Date(end).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-  return `${s} — ${e}`;
-};
+import { fmtRange } from '@/lib/dates';
 
 export default function SearchResultsPage() {
   const [params] = useSearchParams();

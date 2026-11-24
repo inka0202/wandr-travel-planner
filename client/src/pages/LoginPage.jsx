@@ -1,46 +1,28 @@
-import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuthSubmit } from '@/hooks/useAuthSubmit';
 import { FormField } from '@/components/ui/FormField';
 import { Button } from '@/components/ui/Button';
-import { safeNext } from '@/lib/safeRedirect';
+
+const describeLoginError = (err) =>
+  err.response?.data?.error?.code === 'RATE_LIMITED'
+    ? 'Too many attempts. Wait 15 minutes and try again.'
+    : // Generic message — never reveal whether email or password was wrong
+      'Invalid email or password.';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [submitError, setSubmitError] = useState(null);
+  const { submitError, onSubmit } = useAuthSubmit(
+    (data) => login(data.email, data.password),
+    describeLoginError,
+  );
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({ mode: 'onBlur' });
-
-  const onSubmit = async (data) => {
-    setSubmitError(null);
-    try {
-      await login(data.email, data.password);
-      const next = safeNext(
-        new URLSearchParams(location.search).get('next'),
-        window.location.origin,
-      );
-      navigate(next, { replace: true });
-    } catch (err) {
-      if (!err.response) {
-        setSubmitError('Connection failed. Check your internet and try again.');
-        return;
-      }
-      const code = err.response?.data?.error?.code;
-      if (code === 'RATE_LIMITED') {
-        setSubmitError('Too many attempts. Wait 15 minutes and try again.');
-      } else {
-        // Generic message — never reveal whether email or password was wrong
-        setSubmitError('Invalid email or password.');
-      }
-    }
-  };
 
   return (
     <div className="mx-auto mt-16 max-w-md px-4">

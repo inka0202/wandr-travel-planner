@@ -74,6 +74,16 @@ describe('4xx in production', () => {
     assert.equal(res.body.error.stack, undefined);
   });
 
+  it('one health route: GET /health is up, /api/health does not exist', async () => {
+    const health = await ctx.api(nextIp()).get('/health');
+    assert.equal(health.status, 200);
+    assert.equal(health.body.status, 'ok');
+
+    const apiHealth = await ctx.api(nextIp()).get('/api/health');
+    assert.equal(apiHealth.status, 404);
+    assert.equal(apiHealth.body.error.code, 'NOT_FOUND');
+  });
+
   it('helmet removes X-Powered-By', async () => {
     const res = await ctx.api(nextIp()).get('/health');
     assert.equal(res.status, 200);

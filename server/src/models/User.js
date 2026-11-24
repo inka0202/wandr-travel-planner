@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { EMAIL_RE } from '../utils/email.js';
 
 const userSchema = new mongoose.Schema(
   {

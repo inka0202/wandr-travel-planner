@@ -37,13 +37,6 @@ export const tripLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Moderate: 100 requests per 15 minutes per IP
-// Apply in Week 3/4 for defense-in-depth on all routes
-export const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-});
-
 // For endpoints that proxy external paid APIs.
 // 30 requests per 15 minutes per IP — generous enough for real users,
 // low enough to cap accidental or malicious hammering.

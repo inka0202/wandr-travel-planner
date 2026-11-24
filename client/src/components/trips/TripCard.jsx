@@ -2,12 +2,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, Calendar, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { deleteTrip as deleteTripApi } from '@/api/trips';
-
-const fmtRange = (start, end) => {
-  const s = new Date(start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const e = new Date(end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  return `${s} — ${e}`;
-};
+import { fmtRange } from '@/lib/dates';
 
 export default function TripCard({ trip, onDeleted }) {
   const [confirming, setConfirming] = useState(false);
