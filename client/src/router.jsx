@@ -9,24 +9,33 @@ import DashboardPage from '@/pages/DashboardPage';
 import TripPage from '@/pages/TripPage';
 import ProfilePage from '@/pages/ProfilePage';
 import NotFoundPage from '@/pages/NotFoundPage';
+import ErrorPage from '@/pages/ErrorPage';
 
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
+    // The layout itself failed: no navbar, so the error page brings its own <main>.
+    errorElement: <ErrorPage standalone />,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: 'login', element: <LoginPage /> },
-      { path: 'register', element: <RegisterPage /> },
-      { path: 'search', element: <SearchResultsPage /> },
       {
-        element: <ProtectedRoute />,
+        // A page failed: the error shows inside the layout, navbar and footer stay.
+        errorElement: <ErrorPage />,
         children: [
-          { path: 'trips', element: <DashboardPage /> },
-          { path: 'trips/:id', element: <TripPage /> },
-          { path: 'profile', element: <ProfilePage /> },
+          { index: true, element: <HomePage /> },
+          { path: 'login', element: <LoginPage /> },
+          { path: 'register', element: <RegisterPage /> },
+          { path: 'search', element: <SearchResultsPage /> },
+          {
+            element: <ProtectedRoute />,
+            children: [
+              { path: 'trips', element: <DashboardPage /> },
+              { path: 'trips/:id', element: <TripPage /> },
+              { path: 'profile', element: <ProfilePage /> },
+            ],
+          },
+          { path: '*', element: <NotFoundPage /> },
         ],
       },
-      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ]);
