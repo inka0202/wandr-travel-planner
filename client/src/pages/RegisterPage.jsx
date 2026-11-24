@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { FormField } from '@/components/ui/FormField';
 import { Button } from '@/components/ui/Button';
 import { safeNext } from '@/lib/safeRedirect';
+import { EMAIL_RE } from '@/lib/email';
 
 export default function RegisterPage() {
   const { register: registerUser } = useAuth();
@@ -72,7 +73,7 @@ export default function RegisterPage() {
             {...register('email', {
               required: 'Email is required',
               pattern: {
-                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                value: EMAIL_RE,
                 message: 'Enter a valid email address',
               },
             })}
