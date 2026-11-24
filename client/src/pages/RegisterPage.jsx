@@ -1,53 +1,35 @@
-import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuthSubmit } from '@/hooks/useAuthSubmit';
 import { FormField } from '@/components/ui/FormField';
 import { Button } from '@/components/ui/Button';
-import { safeNext } from '@/lib/safeRedirect';
 import { EMAIL_RE } from '@/lib/email';
+
+const describeRegisterError = (err) =>
+  err.response?.data?.error?.code === 'EMAIL_EXISTS' ? (
+    <>
+      That email is already registered.{' '}
+      <Link to="/login" className="font-medium underline">
+        Log in instead.
+      </Link>
+    </>
+  ) : (
+    err.response?.data?.error?.message || 'Something went wrong. Try again.'
+  );
 
 export default function RegisterPage() {
   const { register: registerUser } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [submitError, setSubmitError] = useState(null);
+  const { submitError, onSubmit } = useAuthSubmit(
+    (data) => registerUser(data.email, data.password, data.displayName),
+    describeRegisterError,
+  );
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm({ mode: 'onBlur' });
-
-  const onSubmit = async (data) => {
-    setSubmitError(null);
-    try {
-      await registerUser(data.email, data.password, data.displayName);
-      const next = safeNext(
-        new URLSearchParams(location.search).get('next'),
-        window.location.origin,
-      );
-      navigate(next, { replace: true });
-    } catch (err) {
-      if (!err.response) {
-        setSubmitError('Connection failed. Check your internet and try again.');
-        return;
-      }
-      const code = err.response?.data?.error?.code;
-      if (code === 'EMAIL_EXISTS') {
-        setSubmitError(
-          <>
-            That email is already registered.{' '}
-            <Link to="/login" className="font-medium underline">
-              Log in instead.
-            </Link>
-          </>,
-        );
-      } else {
-        setSubmitError(err.response?.data?.error?.message || 'Something went wrong. Try again.');
-      }
-    }
-  };
 
   return (
     <div className="mx-auto mt-16 max-w-md px-4">
