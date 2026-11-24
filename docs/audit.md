@@ -48,7 +48,7 @@ docs/                screenshots (demo-week2, demo-week3)
 
 | Method & path                                            | Auth | Rate limit                 | Notes                      |
 | -------------------------------------------------------- | ---- | -------------------------- | -------------------------- |
-| GET `/health`, GET `/api/health`                         | –    | –                          | duplicated                 |
+| GET `/health` (`/api/health` removed in Group 3)         | –    | –                          | Render + UptimeRobot       |
 | POST `/api/auth/register`, `/api/auth/login`             | –    | authLimiter 5/15 min       |                            |
 | GET `/api/auth/me`, POST `/api/auth/logout`              | JWT  | –                          | logout is a no-op          |
 | GET `/api/geocode?q=`                                    | –    | publicApiLimiter 30/15 min | Open-Meteo                 |
@@ -143,11 +143,11 @@ All three server calls go through `utils/fetchWithTimeout.js` (8 s timeout since
 
 ## 5. State kept in server memory (lost on every Render restart, deploy or spin-down)
 
-| What                                                                                                                              | Where                                                            | Effect of losing it                                                                                                                                                                                                        |
-| --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| API response cache: a `Map` with TTLs (geocode 7 d, weather 30 min, attractions 24 h) plus a `setInterval` cleanup every 10 min   | [utils/cache.js:9](../server/src/utils/cache.js#L9)              | After a restart every lookup goes upstream again. The main concern is the OpenTripMap free quota. The Map has **no size limit**, and its keys come from user input (`q`, `tz`), so memory can grow without bound (see §6). |
-| Rate-limit counters: express-rate-limit default `MemoryStore` for `authLimiter`, `publicApiLimiter` (and the unused `apiLimiter`) | [middleware/rateLimit.js](../server/src/middleware/rateLimit.js) | Counters reset on restart, so the brute-force limit on login resets too. They would also not be shared if there were ever more than one instance.                                                                          |
-| `process.uptime()` in `/health`                                                                                                   | [app.js](../server/src/app.js)                                   | Cosmetic.                                                                                                                                                                                                                  |
+| What                                                                                                                             | Where                                                            | Effect of losing it                                                                                                                                                                                                        |
+| -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API response cache: a `Map` with TTLs (geocode 7 d, weather 30 min, attractions 24 h) plus a `setInterval` cleanup every 10 min  | [utils/cache.js:9](../server/src/utils/cache.js#L9)              | After a restart every lookup goes upstream again. The main concern is the OpenTripMap free quota. The Map has **no size limit**, and its keys come from user input (`q`, `tz`), so memory can grow without bound (see §6). |
+| Rate-limit counters: express-rate-limit default `MemoryStore` for `authLimiter`, `publicApiLimiter` (`apiLimiter` since removed) | [middleware/rateLimit.js](../server/src/middleware/rateLimit.js) | Counters reset on restart, so the brute-force limit on login resets too. They would also not be shared if there were ever more than one instance.                                                                          |
+| `process.uptime()` in `/health`                                                                                                  | [app.js](../server/src/app.js)                                   | Cosmetic.                                                                                                                                                                                                                  |
 
 Not in memory: sessions (JWT is stateless) and a token blacklist (none exists, `logout` is a no-op).
 Client-side but similar: favourited attractions on the search page are only React state. If a logged-out user clicks
@@ -178,26 +178,26 @@ Client-side but similar: favourited attractions on the search page are only Reac
 - `parseCoord` accepts `""` as `0` (`Number('') === 0`), so `?lat=&lng=` returns weather for (0, 0).
 - `ISO_DATE` regex ([trip.validators.js:3](../server/src/validators/trip.validators.js#L3)) accepts `2026-13-45`. Mongoose then throws a CastError (400), but the message is unclear. Use `isISO8601({ strict: true })`. There is no upper bound on trip length or year.
 - `savedAttractions.*.xid` and `.name` are `optional()` in the validator but `required` in the schema, so the error comes from Mongoose instead of the validator. There are no length limits on name, kind or address.
-- `validate.js` comment promises a `details` array that is never returned.
+- `validate.js` comment promises a `details` array that is never returned. Fixed by chore/cleanup (§8 Group 3).
 - Geocode "no results" (404) is not cached, so repeated misspellings always go upstream.
 - The cache has no in-flight de-duplication, so concurrent identical cold requests each go upstream.
 
 ### Duplicated and dead code
 
 - `parseCoord` is copied in `weather.controller.js` and `attractions.controller.js`.
-- `fmtRange` is copied in `SearchResultsPage.jsx`, `TripPage.jsx` and `TripCard.jsx` (with slight differences).
-- `wmoCodeToGroup` exists in the server's `weatherCodeMap.js` (unused there) and in the client's `weatherIcons.jsx`.
-- The health route is defined twice (`/health` in app.js and `/api/health` in routes/index.js).
-- Login and Register pages repeat the same `next` redirect and error-handling logic. The email regex is in both `User.js` and `RegisterPage.jsx`.
+- `fmtRange` is copied in `SearchResultsPage.jsx`, `TripPage.jsx` and `TripCard.jsx` (with slight differences). Fixed by chore/cleanup (§8 Group 3).
+- `wmoCodeToGroup` exists in the server's `weatherCodeMap.js` (unused there) and in the client's `weatherIcons.jsx`. Fixed by chore/cleanup (server copy removed).
+- The health route is defined twice (`/health` in app.js and `/api/health` in routes/index.js). Fixed by chore/cleanup (`/api/health` removed).
+- Login and Register pages repeat the same `next` redirect and error-handling logic. The email regex is in both `User.js` and `RegisterPage.jsx`. Fixed by chore/cleanup (`useAuthSubmit`; one regex + parity test).
 - The delete-trip flow is implemented separately in `TripCard` and `TripPage`, with different UX (inline confirm vs `window.confirm`).
-- Dead code: `client/src/App.css` (Vite template), `client/README.md` (Vite boilerplate), the unused `ui/Input`, `ui/Card`, `ui/Spinner` and `ui/index.js` barrel (`FormField` and `Button` are imported directly), `apiLimiter`, server `wmoCodeToGroup`, and `ProfilePage` (a routed stub that shows only a heading). The `PATCH /trips/:id` notes endpoint has no UI, and trips are always created with `notes: ''`.
+- Dead code: `client/src/App.css` (Vite template), `client/README.md` (Vite boilerplate), the unused `ui/Input`, `ui/Card`, `ui/Spinner` and `ui/index.js` barrel (`FormField` and `Button` are imported directly), `apiLimiter`, server `wmoCodeToGroup`, and `ProfilePage` (a routed stub that shows only a heading). The `PATCH /trips/:id` notes endpoint has no UI, and trips are always created with `notes: ''`. All removed by chore/cleanup except `ProfilePage` and the notes endpoint (Group 5).
 
 ### Bugs and robustness (client)
 
 - **Users get logged out on Render cold start.** In [AuthContext.jsx:25](../client/src/contexts/AuthContext.jsx#L25), `/auth/me` deletes the token on _any_ error, including timeouts, network errors and 5xx. The axios timeout is 15 s and a free Render cold start takes about 30–60 s. Only a 401 should clear the token.
-- **Dates show one day early in timezones west of UTC.** `new Date('2026-11-20')` is UTC midnight, so `toLocaleDateString` in the Americas shows Nov 19. This affects `fmtRange` (3 places) and `ForecastStrip`'s `formatDay`/`formatDate`. `SearchBar`'s `today()` uses `toISOString()` (a UTC date), so around midnight the date picker's minimum is off by one day.
+- **Dates show one day early in timezones west of UTC.** `new Date('2026-11-20')` is UTC midnight, so `toLocaleDateString` in the Americas shows Nov 19. This affects `fmtRange` (3 places) and `ForecastStrip`'s `formatDay`/`formatDate`. `SearchBar`'s `today()` uses `toISOString()` (a UTC date), so around midnight the date picker's minimum is off by one day. Fixed by chore/cleanup (`client/src/lib/dates.js`, also TripPage's "trip has passed" check).
 - On `TripPage`, weather loading and errors are not shown (just empty space). Delete failures in `TripPage` and `TripCard` are silent.
-- The router has no `errorElement`, so any render error shows React Router's default developer error screen.
+- The router has no `errorElement`, so any render error shows React Router's default developer error screen. Fixed by chore/cleanup (`pages/ErrorPage.jsx`).
 - No code splitting: Leaflet and every page are in the main bundle.
 - Upstream failures were logged without the upstream status or reason (only `WEATHER_UPSTREAM` etc.), so production 502s couldn't be diagnosed. Fixed by fix/weather-upstream Phase 1 (§8).
 - Privacy: morgan `combined` logs the full request URL in production, so the search query (`q`), destination coords, `tz` and the client IP end up in the Render log. Separate from the upstream logging, which redacts these.
@@ -372,17 +372,32 @@ did arrive (non-2xx or non-JSON), so not DNS or timeout.
   - Tests: `client/test/useFetch.test.js` (stale response in both orders, stale rejection, refetch and
     skip mid-flight, clear on error, old data kept while loading).
 
-### Group 3. Clean-up: third, branch chore/cleanup
+### Group 3. Clean-up: third, branch chore/cleanup (done)
 
-- Delete dead code: App.css, client README boilerplate, unused ui/Input, ui/Card, ui/Spinner,
-  ui/index.js, apiLimiter, server wmoCodeToGroup. Keep one health route.
-- Move fmtRange and date helpers to client/src/lib/dates.js and fix the timezone bug there.
-  This includes ForecastStrip's formatDay / formatDate and SearchBar's today() (which uses a UTC date).
-  While in SearchBar, also add `max` limits to the date inputs that match the server rules from
-  Group 1 (server/src/utils/tripDates.js): start at most 2 years ahead, trip at most 30 days
-  (inclusive). Today the user only learns about these limits from the error shown on "Save trip".
-- Add a router errorElement.
-- Fix the details comment in validate.js, keep one email regex, and move the shared next redirect and error handling from the Login and Register pages into one helper.
+User-visible changes only: correct dates west of UTC, date limits on the SearchBar, and a router
+error screen. Everything else is behaviour-neutral.
+
+- Dead code deleted (grep-checked): App.css, client README boilerplate, ui/Input, ui/Card,
+  ui/Spinner, ui/index.js, apiLimiter, server wmoCodeToGroup. One health route: GET `/health`
+  (`/api/health` had no callers; a test checks it is now 404). validate.js comment fixed.
+- `client/src/lib/dates.js`: date-only strings (and the date part of Mongo's UTC-midnight
+  datetimes) are parsed as local dates; one `fmtRange` (`Nov 20 — Nov 27, 2026`, start year added
+  across years, `Nov 20, 2026` for one day), all formatters pinned to 'en-US'. Used by
+  SearchResultsPage, TripPage, TripCard, ForecastStrip and SearchBar. TripPage's "trip has passed"
+  check now uses the local date. Tests run in 6 zones (UTC−10 … UTC+14).
+- SearchBar: `min`/`max` on both date inputs plus react-hook-form `validate` for typed dates
+  (`client/src/lib/tripDates.js`). Min start = local today; max start is UTC-based like the
+  server, so the client can only be stricter, never looser; end ≤ start + 29 days.
+  `tripDates.parity.test.js` checks the boundaries against `server/src/utils/tripDates.js`.
+- Router `errorElement`: `pages/ErrorPage.jsx` (no message or stack in production; "Go home" is a
+  Link styled with the new `buttonClasses()`, not a nested Button). Page errors keep the navbar;
+  a layout crash shows the page alone.
+- One email regex: `server/src/utils/email.js` (User model) with a client copy for Register and
+  `email.parity.test.js`. Same pattern as before, so no account changes; login has no pattern.
+- `hooks/useAuthSubmit.js`: the shared `?next=` redirect (through the unchanged `safeNext`) and
+  connection error for Login and Register; each page keeps its own error-code messages.
+
+Deferred: publicApiLimiter still uses `max` (Group 4 limiter work).
 
 ### Group 4. Not fixed now: will be replaced by shared modules (architecture work, later)
 
@@ -400,7 +415,9 @@ did arrive (non-2xx or non-JSON), so not DNS or timeout.
 
 - With trip editing: delete flow implemented twice, notes endpoint without UI, TripPage weather
   and delete errors, map markers re-created on every render, keeping favourites through the
-  login redirect (draft trip on the device).
+  login redirect (draft trip on the device). Also the Login ↔ Register links drop `?next=`, so
+  registering from the "Save trip" redirect lands on `/trips` instead of returning to the search:
+  pass `next` through both links, via `safeNext`.
   Save trip during a new search's loading can save the previous destination's favourites
   ("Save trip" is disabled only while saving, `favoritedIds` isn't reset on a new search, and
   the old attractions stay in `data` while the new ones load).
@@ -408,6 +425,9 @@ did arrive (non-2xx or non-JSON), so not DNS or timeout.
   search-as-you-type or many in-flight requests. `useFetch` calls `fetchFn()` with no arguments,
   so adding `{ signal }` later is not a breaking change.
 - With account settings: replace the ProfilePage stub.
+- With the auth pages: LoginPage maps every non-RATE_LIMITED error, including 5xx/504 on a Render
+  cold start, to "Invalid email or password." Show a generic server/timeout message for
+  status >= 500.
 - With password reset: login timing difference for unknown emails (use a dummy bcrypt compare),
   and forgot-password must respond the same way and in the same time whether the email exists
   or not (don't await the email send).
